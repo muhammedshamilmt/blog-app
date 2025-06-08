@@ -10,8 +10,12 @@ import { Separator } from "@/components/ui/separator"
 import { Eye, EyeOff, Mail, Lock, BookOpen, Github, Chrome } from "lucide-react"
 import { toast } from "sonner"
 import Link from "next/link"
+import { useRouter } from 'next/navigation'
+import { useUser } from '@/contexts/user-context'
 
 export function LoginForm() {
+  const { login } = useUser()
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -19,7 +23,6 @@ export function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Login attempt:", { email })
     
     if (!email || !password) {
       toast.error("Please fill in all fields")
@@ -28,28 +31,39 @@ export function LoginForm() {
 
     setIsLoading(true)
     
-    // Check for admin credentials
-    if (email === "shaz80170@gmail.com" && password === "871459") {
-      setTimeout(() => {
-        setIsLoading(false)
-        localStorage.setItem('adminAuth', 'authenticated')
-        toast.success("Admin login successful! Redirecting to admin panel...")
-        setTimeout(() => {
-          window.location.href = '/admin'
-        }, 1000)
-      }, 1500)
-      return
-    }
-    
-    // Simulate API call for regular users
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed')
+      }
+
+      // Login successful - update user context
+      login(data.data.user)
+      
+      toast.success(data.message)
+      
+      // Redirect based on user role
+      if (data.data.user.role === 'admin') {
+        router.push('/admin')
+      } else {
+        router.push('/')
+      }
+      
+    } catch (error) {
+      console.error('Login error:', error)
+      toast.error(error instanceof Error ? error.message : 'Login failed')
+    } finally {
       setIsLoading(false)
-      toast.success("Welcome back!")
-      console.log("Login successful")
-      setTimeout(() => {
-        window.location.href = '/'
-      }, 1000)
-    }, 1500)
+    }
   }
 
   const handleSocialLogin = (provider: string) => {
