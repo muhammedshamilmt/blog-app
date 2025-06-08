@@ -333,7 +333,7 @@ export function HeroSection() {
                       className="absolute -inset-2 bg-gradient-to-r from-coral-500/10 to-navy-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     />
                     <motion.div
-                      className="relative bg-coral-500/10 p-2 rounded-lg"
+                      className="relative bg-coral-500/10 p-2 rounded-lg hidden md:block"
                       whileHover={{ rotate: [0, -5, 5, 0] }}
                       transition={{ duration: 0.5 }}
                     >

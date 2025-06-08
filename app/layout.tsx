@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   keywords: ["blog", "editorial", "writing", "content", "modern"],
   authors: [{ name: "Editorial Team" }],
   viewport: "width=device-width, initial-scale=1",
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
