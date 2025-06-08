@@ -16,40 +16,38 @@ export function NewsletterSignup() {
   const [email, setEmail] = useState(user?.email || "")
   const [isSubscribed, setIsSubscribed] = useState(user?.isSubscribed || false)
   const [isLoading, setIsLoading] = useState(false)
+  const [subscribedAt, setSubscribedAt] = useState<Date | null>(user?.subscribedAt ? new Date(user.subscribedAt) : null)
 
   // Check subscription status when user changes
   useEffect(() => {
-    if (user?.isSubscribed) {
-      setIsSubscribed(true)
+    const checkSubscriptionStatus = async () => {
+      if (!user?.email) return
+      
+      try {
+        const response = await fetch(`/api/newsletter/check-status?email=${encodeURIComponent(user.email)}`)
+        const data = await response.json()
+        
+        if (data.success) {
+          setIsSubscribed(data.data.isSubscribed)
+          if (data.data.subscribedAt) {
+            setSubscribedAt(new Date(data.data.subscribedAt))
+          }
+        } else {
+          console.error('Failed to check subscription status:', data.message)
+        }
+      } catch (error) {
+        console.error('Error checking subscription status:', error)
+      }
     }
-  }, [user])
+
+    checkSubscriptionStatus()
+  }, [user?.email])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!email || !email.includes("@")) {
       toast.error("Please enter a valid email address")
-      return
-    }
-
-    // Check if user is logged in
-    if (!user) {
-      toast.error(
-        <div className="flex flex-col gap-2">
-          <p>Please log in to subscribe to our newsletter</p>
-          <Button
-            onClick={() => router.push('/auth/login')}
-            className="bg-coral-500 hover:bg-coral-600 text-white"
-          >
-            <LogIn className="h-4 w-4 mr-2" />
-            Log in
-          </Button>
-        </div>,
-        {
-          duration: 5000,
-          position: "top-center",
-        }
-      )
       return
     }
 
@@ -77,15 +75,9 @@ export function NewsletterSignup() {
       }
 
       setIsSubscribed(true)
+      setSubscribedAt(new Date())
+      toast.success("Welcome to our community! Check your email for confirmation.")
       
-      // Show different messages based on whether it's an existing user
-      if (data.data.isExistingUser) {
-        toast.success(`Welcome back ${data.data.user.firstName}! You're now subscribed to our newsletter.`)
-      } else {
-        toast.success("Welcome to our community! Check your email for confirmation.")
-      }
-      
-      console.log("Newsletter subscription successful:", data)
     } catch (error) {
       console.error('Newsletter subscription error:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to subscribe to newsletter')
@@ -116,9 +108,9 @@ export function NewsletterSignup() {
             </h2>
             <p className="text-xl text-navy-100 mb-8">
               You're now part of our growing community of {Math.floor(Math.random() * 5000) + 10000}+ readers.
-              {user?.subscribedAt && (
+              {subscribedAt && (
                 <span className="block text-sm text-navy-200 mt-2">
-                  Subscribed on {new Date(user.subscribedAt).toLocaleDateString()}
+                  Subscribed on {subscribedAt.toLocaleDateString()}
                 </span>
               )}
             </p>
@@ -240,18 +232,7 @@ export function NewsletterSignup() {
           </div>
           
           <p className="text-sm text-navy-200 mt-4">
-            {!user ? (
-              <>
-                Please <button 
-                  onClick={() => router.push('/auth/login')} 
-                  className="text-coral-400 hover:text-coral-300 underline"
-                >
-                  log in
-                </button> to subscribe to our newsletter
-              </>
-            ) : (
-              "No spam, unsubscribe at any time. We respect your privacy."
-            )}
+            No spam, unsubscribe at any time. We respect your privacy.
           </p>
         </motion.form>
 

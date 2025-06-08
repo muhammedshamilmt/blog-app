@@ -37,7 +37,7 @@ export default function NewsletterPage() {
   if (!user || !user.isSubscribed) {
     return null
   }
-
+  
   return (
     <main className="min-h-screen">
       <Navigation />

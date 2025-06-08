@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,17 +14,30 @@ import { useRouter } from 'next/navigation'
 import { useUser } from '@/contexts/user-context'
 
 export function LoginForm() {
-  const { login } = useUser()
+  const { login, user } = useUser()
   const router = useRouter()
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [formData, setFormData] = useState({
+    email: user?.email || "",
+    password: ""
+  })
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+
+  // Update email when user changes
+  useEffect(() => {
+    if (user?.email) {
+      setFormData(prev => ({ ...prev, email: user.email }))
+    }
+  }, [user])
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!email || !password) {
+    if (!formData.email || !formData.password) {
       toast.error("Please fill in all fields")
       return
     }
@@ -37,7 +50,7 @@ export function LoginForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(formData),
       })
 
       const data = await response.json()
@@ -50,6 +63,9 @@ export function LoginForm() {
       login(data.data.user)
       
       toast.success(data.message)
+      
+      // Reset password field
+      setFormData(prev => ({ ...prev, password: "" }))
       
       // Redirect based on user role
       if (data.data.user.role === 'admin') {
@@ -141,8 +157,8 @@ export function LoginForm() {
                       id="email"
                       type="email"
                       placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={formData.email}
+                      onChange={(e) => handleChange("email", e.target.value)}
                       className="pl-10"
                       required
                     />
@@ -162,8 +178,8 @@ export function LoginForm() {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      value={formData.password}
+                      onChange={(e) => handleChange("password", e.target.value)}
                       className="pl-10 pr-10"
                       required
                     />

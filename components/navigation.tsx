@@ -33,9 +33,9 @@ export function Navigation() {
   const navItems = [
     { name: "Articles", href: "/articles" },
     { name: "About", href: "/about" },
-    ...(user?.isSubscribed ? [{ name: "Newsletter", href: "/newsletter" }] : []),
     { name: "Write", href: "/write" },
-    { name: "Upload", href: "/upload" },
+    ...(user?.isWriter ? [{ name: "Upload", href: "/upload" }] : []),
+    ...(user?.isSubscribed ? [{ name: "Newsletter", href: "/newsletter" }] : []),
     // { name: "Contact", href: "/contact" },
   ]
 
@@ -76,7 +76,9 @@ export function Navigation() {
               <div className="w-8 h-8 bg-gradient-to-br from-navy-900 to-coral-500 rounded-lg flex items-center justify-center">
                 <BookOpen className="h-5 w-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold text-gradient">Editorial</h1>
+              <Link href="/">
+                <h1 className="text-xl font-bold text-gradient">Editorial</h1>
+              </Link>
             </motion.div>
 
             {/* Desktop Navigation */}
@@ -91,7 +93,6 @@ export function Navigation() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  
                   <span>{item.name}</span>
                 </motion.a>
               ))}
@@ -129,6 +130,10 @@ export function Navigation() {
                 <motion.a
                   href="/auth/login"
                   className="text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
+                  whileHover={{ y: -2 }}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
                 >
                   Login
                 </motion.a>
@@ -148,7 +153,7 @@ export function Navigation() {
                 <span className="sr-only">Toggle theme</span>
               </Button>
               
-              {user && (
+              {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -187,7 +192,6 @@ export function Navigation() {
                         </Link>
                       </DropdownMenuItem>
                     )}
-                    
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="text-red-600 cursor-pointer"
@@ -198,20 +202,20 @@ export function Navigation() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden h-9 w-9"
+                  onClick={toggleMobileMenu}
+                >
+                  {isMobileMenuOpen ? (
+                    <X className="h-4 w-4" />
+                  ) : (
+                    <Menu className="h-4 w-4" />
+                  )}
+                </Button>
               )}
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden h-9 w-9"
-                onClick={toggleMobileMenu}
-              >
-                {isMobileMenuOpen ? (
-                  <X className="h-4 w-4" />
-                ) : (
-                  <Menu className="h-4 w-4" />
-                )}
-              </Button>
             </div>
           </div>
         </div>

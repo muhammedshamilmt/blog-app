@@ -128,7 +128,7 @@ export function Footer() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <p>© 2024 Editorial. All rights reserved. Made with ❤️ for the writing community.</p>
+              <p>© 2025 Editorial. All rights reserved. Made with ❤️ for the writing community.</p>
             </motion.div>
 
             {/* Social Links & Back to Top */}

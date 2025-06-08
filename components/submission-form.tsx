@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -9,13 +9,17 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Send, Upload, User, Mail, PenTool } from "lucide-react"
+import { Send, Upload, User, Mail, PenTool, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
+import { useUser } from '@/contexts/user-context'
 
 export function SubmissionForm() {
+  const { user } = useUser()
+  const [isWriter, setIsWriter] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
+    name: user ? `${user.firstName} ${user.lastName}` : "",
+    email: user?.email || "",
     title: "",
     category: "",
     pitch: "",
@@ -23,15 +27,52 @@ export function SubmissionForm() {
     portfolio: ""
   })
   const [agreeToGuidelines, setAgreeToGuidelines] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Check writer status when component mounts
+  useEffect(() => {
+    const checkWriterStatus = async () => {
+      if (!user?.email) return
+      
+      try {
+        const response = await fetch(`/api/writers/check-status?email=${encodeURIComponent(user.email)}`)
+        const data = await response.json()
+        
+        if (data.success) {
+          setIsWriter(data.isWriter)
+        } else {
+          toast.error('Failed to check writer status')
+        }
+      } catch (error) {
+        console.error('Error checking writer status:', error)
+        toast.error('Failed to check writer status')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkWriterStatus()
+  }, [user?.email])
+
+  // Update form data when user context changes
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email
+      }))
+    }
+  }, [user])
 
   const handleChange = (field: string, value: string) => {
+    // Don't allow changes to name and email
+    if (field === 'name' || field === 'email') return
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Article submission:", formData)
     
     if (!formData.name || !formData.email || !formData.title || !formData.pitch) {
       toast.error("Please fill in all required fields")
@@ -43,9 +84,23 @@ export function SubmissionForm() {
       return
     }
 
-    setIsLoading(true)
+    setIsSubmitting(true)
     
     try {
+      // First, update the user's role to writer
+      const updateRoleResponse = await fetch('/api/users/update-role', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: user?.email, isWriter: true }),
+      })
+
+      if (!updateRoleResponse.ok) {
+        throw new Error('Failed to update user role')
+      }
+
+      // Then submit the article pitch
       const response = await fetch('/api/writers/submit', {
         method: 'POST',
         headers: {
@@ -61,25 +116,80 @@ export function SubmissionForm() {
       }
 
       toast.success(data.message)
+      setIsWriter(true) // Update local state to show writer card
       
-      // Reset form
-      setFormData({
-        name: "",
-        email: "",
+      // Reset form except for name and email
+      setFormData(prev => ({
+        ...prev,
         title: "",
         category: "",
         pitch: "",
         experience: "",
         portfolio: ""
-      })
+      }))
       setAgreeToGuidelines(false)
       
     } catch (error) {
       console.error('Error submitting pitch:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to submit pitch')
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-navy-900"></div>
+      </div>
+    )
+  }
+
+  if (isWriter) {
+    return (
+      <section className="py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <Card className="border-2 border-border/50 shadow-xl">
+              <CardHeader className="text-center pb-8">
+                <div className="flex justify-center mb-4">
+                  <CheckCircle2 className="h-16 w-16 text-green-500" />
+                </div>
+                <CardTitle className="text-3xl font-bold mb-4">
+                  You're Already a Writer!
+                </CardTitle>
+                <p className="text-muted-foreground text-lg">
+                  Thank you for being part of our writing community. You can submit new article pitches at any time.
+                </p>
+              </CardHeader>
+              <CardContent className="text-center">
+                <Button
+                  onClick={() => {
+                    setFormData(prev => ({
+                      ...prev,
+                      title: "",
+                      category: "",
+                      pitch: "",
+                      experience: "",
+                      portfolio: ""
+                    }))
+                    setIsWriter(false)
+                  }}
+                  className="bg-navy-900 hover:bg-navy-600"
+                >
+                  Submit New Article Pitch
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </section>
+    )
   }
 
   const categories = [
@@ -117,32 +227,30 @@ export function SubmissionForm() {
                 {/* Personal Information */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name *</Label>
+                    <Label htmlFor="name">Full Name</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="name"
                         type="text"
-                        placeholder="Your full name"
                         value={formData.name}
-                        onChange={(e) => handleChange("name", e.target.value)}
-                        className="pl-10"
-                        required
+                        className="pl-10 bg-muted"
+                        readOnly
+                        disabled
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email Address *</Label>
+                    <Label htmlFor="email">Email Address</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="email"
                         type="email"
-                        placeholder="your@email.com"
                         value={formData.email}
-                        onChange={(e) => handleChange("email", e.target.value)}
-                        className="pl-10"
-                        required
+                        className="pl-10 bg-muted"
+                        readOnly
+                        disabled
                       />
                     </div>
                   </div>
@@ -232,9 +340,9 @@ export function SubmissionForm() {
                 <Button 
                   type="submit" 
                   className="w-full bg-navy-900 hover:bg-navy-600 text-white py-3 text-lg" 
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 >
-                  {isLoading ? (
+                  {isSubmitting ? (
                     <div className="flex items-center">
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
                       Submitting Pitch...

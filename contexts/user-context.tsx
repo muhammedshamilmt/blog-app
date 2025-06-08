@@ -11,6 +11,7 @@ interface User {
   role: 'user' | 'admin'
   isVerified: boolean
   isSubscribed?: boolean
+  isWriter?: boolean
   subscribedAt?: Date
 }
 
@@ -36,36 +37,40 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    // Check if user is logged in on mount
-    const checkAuth = async () => {
-      try {
-        const storedUser = localStorage.getItem('userData')
-        if (storedUser) {
-          // If we have stored user data, verify with the server
-          const response = await fetch('/api/auth/me')
-          if (response.ok) {
-            const data = await response.json()
-            // Update stored user data with fresh data from server
-            const updatedUser = data.user
-            setUser(updatedUser)
-            localStorage.setItem('userData', JSON.stringify(updatedUser))
-          } else {
-            // If server verification fails, clear storage
-            localStorage.removeItem('userData')
-            setUser(null)
+    // Only check auth if we don't have user data in state
+    if (!user) {
+      const checkAuth = async () => {
+        try {
+          const storedUser = localStorage.getItem('userData')
+          if (storedUser) {
+            // If we have stored user data, verify with the server
+            const response = await fetch('/api/auth/me')
+            if (response.ok) {
+              const data = await response.json()
+              // Update stored user data with fresh data from server
+              const updatedUser = data.user
+              setUser(updatedUser)
+              localStorage.setItem('userData', JSON.stringify(updatedUser))
+            } else {
+              // If server verification fails, clear storage
+              localStorage.removeItem('userData')
+              setUser(null)
+            }
           }
+        } catch (error) {
+          console.error('Auth check failed:', error)
+          localStorage.removeItem('userData')
+          setUser(null)
+        } finally {
+          setIsLoading(false)
         }
-      } catch (error) {
-        console.error('Auth check failed:', error)
-        localStorage.removeItem('userData')
-        setUser(null)
-      } finally {
-        setIsLoading(false)
       }
-    }
 
-    checkAuth()
-  }, [])
+      checkAuth()
+    } else {
+      setIsLoading(false)
+    }
+  }, [user]) // Only run when user state changes
 
   const login = (userData: User) => {
     setUser(userData)
