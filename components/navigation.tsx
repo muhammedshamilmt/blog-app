@@ -34,10 +34,13 @@ export function Navigation() {
     { name: "Articles", href: "/articles" },
     { name: "About", href: "/about" },
     { name: "Write", href: "/write" },
-    ...(user?.isWriter ? [{ name: "Upload", href: "/upload" }] : []),
-    ...(user?.isSubscribed ? [{ name: "Newsletter", href: "/newsletter" }] : []),
-    // { name: "Contact", href: "/contact" },
-  ]
+  ];
+  if (user?.role?.toLowerCase() === 'writer' || user?.isWriter) {
+    navItems.push({ name: "Upload", href: "/upload" });
+  }
+  if (user?.isSubscribed) {
+    navItems.push({ name: "Newsletter", href: "/newsletter" });
+  }
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)

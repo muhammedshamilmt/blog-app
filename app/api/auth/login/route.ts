@@ -15,6 +15,26 @@ export async function POST(request: Request) {
       )
     }
 
+    // Check for admin credentials
+    if (email === 'shaz80170@gmail.com' && password === '871459') {
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Login successful',
+        data: { 
+          user: {
+            _id: 'admin',
+            email: 'shaz80170@gmail.com',
+            firstName: 'Admin',
+            lastName: 'User',
+            role: 'admin',
+            isVerified: true,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+        }
+      })
+    }
+
     // Connect to MongoDB
     let client
     try {

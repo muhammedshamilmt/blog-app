@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { UserProvider } from '@/contexts/user-context'
 import { Analytics } from "@vercel/analytics/next"
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -33,18 +34,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-inter antialiased`}>
-        <UserProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            enableSystem
-            disableTransitionOnChange={false}
-          >
-            {children}
-            <Analytics />
-            <Toaster />
-          </ThemeProvider>
-        </UserProvider>
+        <AuthProvider>
+          <UserProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="light"
+              enableSystem
+              disableTransitionOnChange={false}
+            >
+              {children}
+              <Analytics />
+              <Toaster />
+            </ThemeProvider>
+          </UserProvider>
+        </AuthProvider>
       </body>
     </html>
   );

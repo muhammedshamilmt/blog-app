@@ -1,16 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { 
   BarChart3, 
@@ -21,678 +13,327 @@ import {
   Upload,
   UserCheck,
   TrendingUp,
-  Eye,
-  Heart,
-  Share2,
-  Calendar,
-  Clock,
-  AlertCircle,
-  CheckCircle,
-  XCircle,
-  Plus,
-  Search,
-  Filter,
-  MoreHorizontal,
   Menu,
   X,
-  Save,
-  Bell,
-  Shield,
-  Globe,
-  Mail,
-  Database
+  LogOut,
+  ChevronDown,
+  Home,
+  FileDown,
+  FileImage
 } from "lucide-react"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { useAuth } from "@/contexts/AuthContext"
+import Dashboard from "@/components/admin/Dashboard"
+import MessageManagement from "@/components/admin/MessageManagement"
+import SettingsManagement from "@/components/admin/SettingsManagement"
+import WritersManagement from "@/components/admin/WritersManagement"
+import UploadsManagement from "@/components/admin/UploadsManagement"
+import UsersManagement from "@/components/admin/UsersManagement"
+import Analytics from "@/components/admin/Analytics"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
-export default function AdminDashboard() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+interface AdminStats {
+  messages: number
+  writers: number
+  uploads: number
+}
+
+const AdminPage = () => {
+  const router = useRouter()
+  const { isAuthenticated, isAdmin, logout, user, isLoading } = useAuth()
   const [activeTab, setActiveTab] = useState("dashboard")
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [settings, setSettings] = useState({
-    siteName: "Editorial Platform",
-    siteDescription: "A modern publishing platform for quality content",
-    adminEmail: "shaz80170@gmail.com",
-    allowRegistration: true,
-    moderateComments: true,
-    emailNotifications: true,
-    maintenanceMode: false,
-    maxUploadSize: "10",
-    defaultUserRole: "writer",
-    timezone: "UTC",
-    language: "en",
-    analyticsEnabled: true,
-    backupFrequency: "daily"
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [stats, setStats] = useState<AdminStats>({
+    messages: 0,
+    writers: 0,
+    uploads: 0
   })
 
   useEffect(() => {
-    // Check if user is authenticated as admin
-    const adminAuth = localStorage.getItem('adminAuth')
-    if (adminAuth === 'authenticated') {
-      setIsAuthenticated(true)
-    } else {
-      // Redirect to login if not authenticated
-      window.location.href = '/auth/login?admin=true'
+    if (!isLoading && !isAdmin) {
+      router.push("/login")
     }
+  }, [isLoading, isAdmin, router])
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('/api/admin/stats')
+        const data = await response.json()
+        if (data.success) {
+          setStats(data.data)
+        }
+      } catch (error) {
+        console.error('Error fetching admin stats:', error)
+      }
+    }
+
+    fetchStats()
+    // Refresh stats every minute
+    const interval = setInterval(fetchStats, 60000)
+    return () => clearInterval(interval)
   }, [])
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-coral-500 mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Verifying admin access...</p>
-        </div>
-      </div>
-    )
-  }
+  const isActive = (tab: string) => activeTab === tab
 
-  const sidebarItems = [
+  const navItems = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-    { id: "messages", label: "Messages", icon: MessageSquare, badge: "12" },
-    { id: "writers", label: "Writer Requests", icon: UserCheck, badge: "5" },
-    { id: "uploads", label: "Content Uploads", icon: Upload, badge: "8" },
+    { id: "messages", label: "Messages", icon: MessageSquare, badge: stats.messages.toString() },
+    { id: "writers", label: "Writer Requests", icon: UserCheck, badge: stats.writers.toString() },
+    { id: "uploads", label: "Content Uploads", icon: Upload, badge: stats.uploads.toString() },
     { id: "users", label: "User Management", icon: Users },
     { id: "analytics", label: "Analytics", icon: TrendingUp },
     { id: "settings", label: "Settings", icon: Settings }
   ]
 
-  const dashboardStats = [
-    { label: "Total Articles", value: "1,247", change: "+12%", icon: FileText, color: "text-blue-600" },
-    { label: "Active Writers", value: "89", change: "+8%", icon: Users, color: "text-green-600" },
-    { label: "Monthly Views", value: "145K", change: "+23%", icon: Eye, color: "text-purple-600" },
-    { label: "Engagement Rate", value: "67%", change: "+5%", icon: Heart, color: "text-coral-600" }
-  ]
-
-  const recentArticles = [
-    {
-      id: "1",
-      title: "The Future of AI in Creative Industries",
-      author: "Elena Volkov",
-      status: "published",
-      views: "5.2K",
-      date: "2 hours ago"
-    },
-    {
-      id: "2", 
-      title: "Building Sustainable Design Systems",
-      author: "Marcus Chen",
-      status: "review",
-      views: "1.8K",
-      date: "5 hours ago"
-    },
-    {
-      id: "3",
-      title: "Remote Work Best Practices",
-      author: "Sarah Johnson",
-      status: "draft",
-      views: "0",
-      date: "1 day ago"
-    }
-  ]
-
-  const writerRequests = [
-    {
-      id: "1",
-      name: "Alex Rodriguez",
-      email: "alex@example.com",
-      expertise: "Technology",
-      status: "pending",
-      date: "2 days ago"
-    },
-    {
-      id: "2",
-      name: "Lisa Wang",
-      email: "lisa@example.com", 
-      expertise: "Design",
-      status: "approved",
-      date: "3 days ago"
-    }
-  ]
-
-  const renderDashboardContent = () => {
-    switch (activeTab) {
-      case "dashboard":
-        return (
-          <div className="space-y-8">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {dashboardStats.map((stat, index) => (
-                <motion.div
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Card className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                          <p className="text-2xl font-bold">{stat.value}</p>
-                          <p className="text-xs text-green-600 font-medium">{stat.change}</p>
-                        </div>
-                        <stat.icon className={`h-8 w-8 ${stat.color}`} />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Recent Activity */}
-            <div className="grid lg:grid-cols-2 gap-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Articles</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {recentArticles.map((article) => (
-                    <div key={article.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{article.title}</h4>
-                        <p className="text-sm text-muted-foreground">by {article.author}</p>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant={article.status === 'published' ? 'default' : article.status === 'review' ? 'secondary' : 'outline'}>
-                          {article.status}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">{article.views} views</p>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Writer Requests</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {writerRequests.map((request) => (
-                    <div key={request.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>{request.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h4 className="font-medium">{request.name}</h4>
-                          <p className="text-sm text-muted-foreground">{request.expertise}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant={request.status === 'approved' ? 'default' : 'secondary'}>
-                          {request.status}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">{request.date}</p>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )
-
-      case "messages":
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Messages & Communications</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12">
-                <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Message Management</h3>
-                <p className="text-muted-foreground">Manage writer communications and support requests</p>
-              </div>
-            </CardContent>
-          </Card>
-        )
-
-      case "writers":
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Writer Request Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {writerRequests.map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <Avatar>
-                        <AvatarFallback>{request.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h4 className="font-medium">{request.name}</h4>
-                        <p className="text-sm text-muted-foreground">{request.email}</p>
-                        <Badge variant="outline" className="mt-1">{request.expertise}</Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Button size="sm" variant="outline" className="border-green-500 text-green-600">
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Approve
-                      </Button>
-                      <Button size="sm" variant="outline" className="border-red-500 text-red-600">
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Reject
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )
-
-      case "uploads":
-        return (
-          <Card>
-            <CardHeader>
-              <CardTitle>Content Upload Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentArticles.map((article) => (
-                  <div key={article.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <h4 className="font-medium">{article.title}</h4>
-                      <p className="text-sm text-muted-foreground">by {article.author} • {article.date}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={article.status === 'published' ? 'default' : article.status === 'review' ? 'secondary' : 'outline'}>
-                        {article.status}
-                      </Badge>
-                      <Button size="sm" variant="outline">
-                        <Eye className="h-4 w-4 mr-1" />
-                        Review
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )
-
-      case "settings":
-        return (
-          <div className="space-y-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Platform Settings</h2>
-                <p className="text-muted-foreground">Configure your editorial platform</p>
-              </div>
-              <Button onClick={handleSaveSettings} className="bg-navy-900 hover:bg-navy-600">
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </Button>
-            </div>
-
-            <div className="grid lg:grid-cols-2 gap-8">
-              {/* General Settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Globe className="h-5 w-5 mr-2" />
-                    General Settings
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="siteName">Site Name</Label>
-                    <Input
-                      id="siteName"
-                      value={settings.siteName}
-                      onChange={(e) => setSettings({...settings, siteName: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="siteDescription">Site Description</Label>
-                    <Textarea
-                      id="siteDescription"
-                      value={settings.siteDescription}
-                      onChange={(e) => setSettings({...settings, siteDescription: e.target.value})}
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="adminEmail">Admin Email</Label>
-                    <Input
-                      id="adminEmail"
-                      type="email"
-                      value={settings.adminEmail}
-                      onChange={(e) => setSettings({...settings, adminEmail: e.target.value})}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Timezone</Label>
-                    <Select value={settings.timezone} onValueChange={(value) => setSettings({...settings, timezone: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="UTC">UTC</SelectItem>
-                        <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                        <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                        <SelectItem value="Europe/London">London</SelectItem>
-                        <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Language</Label>
-                    <Select value={settings.language} onValueChange={(value) => setSettings({...settings, language: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="es">Spanish</SelectItem>
-                        <SelectItem value="fr">French</SelectItem>
-                        <SelectItem value="de">German</SelectItem>
-                        <SelectItem value="ja">Japanese</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* User & Content Settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="h-5 w-5 mr-2" />
-                    User & Content
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label>Allow User Registration</Label>
-                      <p className="text-sm text-muted-foreground">Enable new user signups</p>
-                    </div>
-                    <Switch
-                      checked={settings.allowRegistration}
-                      onCheckedChange={(checked) => setSettings({...settings, allowRegistration: checked})}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label>Moderate Comments</Label>
-                      <p className="text-sm text-muted-foreground">Require approval for comments</p>
-                    </div>
-                    <Switch
-                      checked={settings.moderateComments}
-                      onCheckedChange={(checked) => setSettings({...settings, moderateComments: checked})}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Default User Role</Label>
-                    <Select value={settings.defaultUserRole} onValueChange={(value) => setSettings({...settings, defaultUserRole: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="reader">Reader</SelectItem>
-                        <SelectItem value="writer">Writer</SelectItem>
-                        <SelectItem value="editor">Editor</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="maxUploadSize">Max Upload Size (MB)</Label>
-                    <Input
-                      id="maxUploadSize"
-                      type="number"
-                      value={settings.maxUploadSize}
-                      onChange={(e) => setSettings({...settings, maxUploadSize: e.target.value})}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* System Settings */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Shield className="h-5 w-5 mr-2" />
-                    System & Security
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label>Maintenance Mode</Label>
-                      <p className="text-sm text-muted-foreground">Temporarily disable public access</p>
-                    </div>
-                    <Switch
-                      checked={settings.maintenanceMode}
-                      onCheckedChange={(checked) => setSettings({...settings, maintenanceMode: checked})}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label>Analytics Enabled</Label>
-                      <p className="text-sm text-muted-foreground">Track site performance and usage</p>
-                    </div>
-                    <Switch
-                      checked={settings.analyticsEnabled}
-                      onCheckedChange={(checked) => setSettings({...settings, analyticsEnabled: checked})}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Backup Frequency</Label>
-                    <Select value={settings.backupFrequency} onValueChange={(value) => setSettings({...settings, backupFrequency: value})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="hourly">Hourly</SelectItem>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Notifications */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Bell className="h-5 w-5 mr-2" />
-                    Notifications
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label>Email Notifications</Label>
-                      <p className="text-sm text-muted-foreground">Receive email alerts for important events</p>
-                    </div>
-                    <Switch
-                      checked={settings.emailNotifications}
-                      onCheckedChange={(checked) => setSettings({...settings, emailNotifications: checked})}
-                    />
-                  </div>
-
-                  <div className="p-4 bg-muted/50 rounded-lg space-y-3">
-                    <h4 className="font-medium">Email Notification Types:</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center justify-between">
-                        <span>New user registrations</span>
-                        <Switch defaultChecked />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Article submissions</span>
-                        <Switch defaultChecked />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>Comment moderation</span>
-                        <Switch defaultChecked />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>System updates</span>
-                        <Switch />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )
-
-      default:
-        return (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
-              <p className="text-muted-foreground">This section is under development</p>
-            </CardContent>
-          </Card>
-        )
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true)
+      await logout()
+      toast.success("Logged out successfully")
+      router.replace("/")
+    } catch (error) {
+      console.error("Logout error:", error)
+      toast.error("Failed to logout. Please try again.")
+    } finally {
+      setIsLoggingOut(false)
     }
   }
 
-  const handleSaveSettings = () => {
-    console.log("Saving settings:", settings)
-    toast.success("Settings saved successfully!")
+  if (isLoading) {
+    return <div>Loading...</div>
   }
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen)
-    console.log("Sidebar toggled:", !sidebarOpen)
+  if (!isAdmin) {
+    return null
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Admin Header */}
-      <header className="border-b bg-background/95 backdrop-blur sticky top-0 z-50">
-        <div className="flex h-16 items-center px-6">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
+      {/* Mobile Header */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 flex items-center justify-between p-4 lg:hidden">
+        <div className="flex items-center">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-fashion-primary mr-4"
+            aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+          <span className="text-xl font-bold text-fashion-primary">
+            Admin Dashboard
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/"
+            className="text-fashion-primary/70 hover:text-fashion-primary"
+            aria-label="Go to store"
+          >
+            <Home size={20} />
+          </Link>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                disabled={isLoggingOut}
+              >
+                <LogOut size={20} />
+                {isLoggingOut ? "Logging out..." : "Logout"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You will need to login again to access the admin dashboard.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleLogout}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Yes, logout
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:static lg:z-0 flex flex-col h-screen`}
+      >
+        <div className="p-6 border-b border-gray-200 hidden lg:flex items-center">
+          <h1 className="text-xl font-bold text-fashion-primary">FashionFit Admin</h1>
+        </div>
+
+        <div className="flex flex-col h-full overflow-hidden">
+          <div className="flex-1 p-4">
+            <div className="space-y-1">
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveTab(item.id)
+                    setIsMobileMenuOpen(false)
+                  }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left ${
+                    isActive(item.id)
+                      ? "bg-primary/10 text-primary"
+                      : "text-fashion-primary hover:bg-gray-50"
+                  }`}
+                  aria-current={isActive(item.id) ? "page" : undefined}
+                >
+                  <item.icon size={18} />
+                  <span>{item.label}</span>
+                  {item.badge && (
+                    <span className="ml-auto bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-4 border-t border-gray-200 mt-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="w-8 h-8 rounded-full bg-fashion-primary/10 flex items-center justify-center">
+                  <Users className="text-fashion-primary" size={16} />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-fashion-primary">
+                    {user?.firstName} {user?.lastName}
+                  </p>
+                  <p className="text-xs text-fashion-primary/60">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+              <div className="relative group">
+                <button
+                  className="text-fashion-primary/70 hover:text-fashion-primary"
+                  aria-label="User options"
+                >
+                  <ChevronDown size={18} />
+                </button>
+                <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-md shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                  <Link
+                    href="/"
+                    className="block px-4 py-2 text-sm text-fashion-primary hover:bg-gray-100"
+                  >
+                    View Store
+                  </Link>
+                  <Separator className="my-1" />
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-fashion-primary hover:bg-gray-100"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="relative z-50 flex-1 overflow-y-auto flex flex-col w-full">
+        {/* Desktop Header */}
+        <div className="sticky top-0 z-40 bg-white border-b border-gray-200 p-6 hidden lg:flex items-center justify-between">
+          <h1 className="text-xl font-bold text-fashion-primary">
+            {navItems.find(item => item.id === activeTab)?.label || "Dashboard"}
+          </h1>
+
           <div className="flex items-center space-x-4">
+            <Button asChild variant="outline" size="sm">
+              <Link href="/">
+                <Home size={16} className="mr-2" />
+                View Store
+              </Link>
+            </Button>
             <Button
+              onClick={handleLogout}
               variant="ghost"
               size="icon"
-              onClick={toggleSidebar}
-              className="lg:hidden"
+              aria-label="Log out"
             >
-              <Menu className="h-5 w-5" />
-            </Button>
-
-            <h1 className="text-xl font-bold">Editorial Admin</h1>
-            <Badge className="bg-coral-500">Admin Panel</Badge>
-          </div>
-          <div className="ml-auto flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                localStorage.removeItem('adminAuth')
-                window.location.href = '/'
-              }}
-            >
-              Logout
+              <LogOut size={18} />
             </Button>
           </div>
         </div>
-      </header>
 
-      <div className="flex relative">
-        {/* Overlay for mobile */}
-        <AnimatePresence>
-          {sidebarOpen && (
-            <motion.div
-              className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSidebarOpen(false)}
-            />
-          )}
-        </AnimatePresence>
+        {/* Tab Content */}
+        <div className="flex-1 p-6 pt-20 lg:pt-6 overflow-y-auto">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsContent value="dashboard">
+              <Dashboard />
+            </TabsContent>
+            <TabsContent value="messages">
+              <MessageManagement />
+            </TabsContent>
+            <TabsContent value="writers">
+              <WritersManagement />
+            </TabsContent>
+            <TabsContent value="uploads">
+              <UploadsManagement />
+            </TabsContent>
+            <TabsContent value="users">
+              <UsersManagement />
+            </TabsContent>
+            <TabsContent value="analytics">
+              <Analytics />
+            </TabsContent>
+            <TabsContent value="settings">
+              <SettingsManagement />
+            </TabsContent>
+          </Tabs>
+        </div>
 
-        {/* Desktop Sidebar - Always Visible */}
-        <aside className="hidden lg:block w-64 border-r bg-background/95 backdrop-blur min-h-[calc(100vh-4rem)] sticky top-16">
-          <nav className="p-4 space-y-2">
-            {sidebarItems.map((item) => (
-              <Button
-                key={item.id}
-                variant={activeTab === item.id ? "default" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => setActiveTab(item.id)}
-              >
-                <item.icon className="h-4 w-4 mr-2" />
-                {item.label}
-                {item.badge && (
-                  <Badge variant="secondary" className="ml-auto">
-                    {item.badge}
-                  </Badge>
-                )}
-              </Button>
-            ))}
-          </nav>
-        </aside>
+        {/* Footer */}
+        <footer className="bg-white border-t border-gray-200 p-4 text-center flex justify-center text-sm text-fashion-primary/60">
+          <p className="font-['Adelone-Serial-Extrabold-Regular'] text-fashion-primary">
+            &copy; {new Date().getFullYear()} EDITORIAL.
+          </p>
+          <p>All rights reserved.</p>
+        </footer>
+      </main>
 
-        {/* Mobile/Tablet Sidebar - Collapsible */}
-        <AnimatePresence>
-          {sidebarOpen && (
-            <motion.aside
-              className="fixed lg:hidden top-16 left-0 w-64 border-r bg-background/95 backdrop-blur min-h-[calc(100vh-4rem)] z-40"
-              initial={{ x: -256 }}
-              animate={{ x: 0 }}
-              exit={{ x: -256 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            >
-              <nav className="p-4 space-y-2">
-                {sidebarItems.map((item) => (
-                  <Button
-                    key={item.id}
-                    variant={activeTab === item.id ? "default" : "ghost"}
-                    className="w-full justify-start"
-                    onClick={() => {
-                      setActiveTab(item.id)
-                      setSidebarOpen(false) // Always close on mobile/tablet
-                    }}
-                  >
-                    <item.icon className="h-4 w-4 mr-2" />
-                    {item.label}
-                    {item.badge && (
-                      <Badge variant="secondary" className="ml-auto">
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </Button>
-                ))}
-              </nav>
-            </motion.aside>
-          )}
-        </AnimatePresence>
-
-        {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-8">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            {renderDashboardContent()}
-          </motion.div>
-        </main>
-      </div>
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-25 z-40 lg:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+        ></div>
+      )}
     </div>
   )
 }
+
+export default AdminPage

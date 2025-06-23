@@ -9,22 +9,21 @@ import { Filter, TrendingUp, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface BlogPost {
-  id: string
-  seoTitle: string
-  seoDescription: string
+  _id: string
+  title: string
+  content: string
   author: {
     name: string
-    avatar: string
-    initials: string
+    email: string
   }
-  publishDate: string
-  readTime: string
   category: string
-  tags: string[]
-  image: string
-  featured: boolean
-  likes: number
-  comments: number
+  type: string
+  status: string
+  publishedAt: string
+  createdAt: string
+  updatedAt: string
+  image?: string
+  attachments?: string[]
 }
 
 export function BlogGrid() {
@@ -34,6 +33,7 @@ export function BlogGrid() {
   const [isLoading, setIsLoading] = useState(true)
   const [totalPosts, setTotalPosts] = useState(0)
   const [page, setPage] = useState(1)
+  const [error, setError] = useState<string | null>(null)
 
   const categories = [
     "All", "Design", "Development", "Business", "Technology", "Lifestyle", "Opinion"
@@ -42,10 +42,11 @@ export function BlogGrid() {
   const fetchBlogs = async (category: string = selectedCategory, pageNum: number = 1) => {
     try {
       setIsLoading(true)
+      setError(null)
       console.log('Fetching blogs for category:', category, 'page:', pageNum)
       
       const response = await fetch(
-        `/api/blogs?category=${encodeURIComponent(category)}&page=${pageNum}&limit=${visiblePosts}`
+        `/api/uploads?status=published&category=${encodeURIComponent(category)}&page=${pageNum}&limit=${visiblePosts}`
       )
       
       if (!response.ok) {
@@ -69,6 +70,7 @@ export function BlogGrid() {
       setPage(pageNum)
     } catch (error) {
       console.error('Error fetching blogs:', error)
+      setError(error instanceof Error ? error.message : 'Failed to load blogs')
       toast.error(error instanceof Error ? error.message : 'Failed to load blogs. Please try again later.')
       // Reset state on error
       if (pageNum === 1) {
@@ -94,6 +96,24 @@ export function BlogGrid() {
     const nextPage = page + 1
     await fetchBlogs(selectedCategory, nextPage)
     setVisiblePosts(prev => prev + 6)
+  }
+
+  // Helper function to safely get author initials
+  const getAuthorInitials = (name: string) => {
+    try {
+      return name.split(' ').map(n => n[0]).join('')
+    } catch {
+      return 'A'
+    }
+  }
+
+  // Helper function to safely get read time
+  const getReadTime = (content: string) => {
+    try {
+      return `${Math.ceil(content.split(' ').length / 200)} min read`
+    } catch {
+      return '5 min read'
+    }
   }
 
   return (
@@ -146,6 +166,22 @@ export function BlogGrid() {
           ))}
         </motion.div>
 
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <p className="text-lg text-red-600">
+              {error}
+            </p>
+            <Button
+              onClick={() => fetchBlogs()}
+              variant="outline"
+              className="mt-4"
+            >
+              Try Again
+            </Button>
+          </div>
+        )}
+
         {/* Loading State */}
         {isLoading && page === 1 ? (
           <div className="flex justify-center items-center min-h-[400px]">
@@ -160,8 +196,23 @@ export function BlogGrid() {
             >
               {blogPosts.map((post, index) => (
                 <BlogCard
-                  key={`${post.id}-${index}`}
-                  {...post}
+                  key={`${post._id}-${index}`}
+                  id={post._id}
+                  seoTitle={post.title || 'Untitled'}
+                  seoDescription={(post.content || '').substring(0, 150) + '...'}
+                  author={{
+                    name: post.author?.name || 'Anonymous',
+                    avatar: '',
+                    initials: getAuthorInitials(post.author?.name || 'Anonymous')
+                  }}
+                  publishDate={new Date(post.publishedAt || post.createdAt).toLocaleDateString()}
+                  readTime={getReadTime(post.content || '')}
+                  category={post.category || 'Uncategorized'}
+                  tags={[post.type || 'article']}
+                  image={post.image || '/placeholder-blog.jpg'}
+                  featured={false}
+                  likes={0}
+                  comments={0}
                   index={index}
                 />
               ))}
@@ -199,7 +250,7 @@ export function BlogGrid() {
             )}
 
             {/* No Results */}
-            {!isLoading && blogPosts.length === 0 && (
+            {!isLoading && !error && blogPosts.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-lg text-muted-foreground">
                   No articles found in this category.

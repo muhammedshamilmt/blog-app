@@ -1,68 +1,81 @@
 import { NextResponse } from 'next/server'
-import clientPromise from '@/lib/mongodb'
+import { connectToDatabase } from '@/lib/mongodb'
+import { ObjectId } from 'mongodb'
 
 export async function GET() {
   try {
-    // Connect to MongoDB
-    let client
-    try {
-      client = await clientPromise
-    } catch (dbError) {
-      console.error('MongoDB connection error:', dbError)
-      return NextResponse.json(
-        { success: false, message: 'Database connection failed' },
-        { status: 500 }
-      )
+    const { db } = await connectToDatabase()
+    
+    if (!db) {
+      throw new Error('Database connection failed')
     }
 
-    const db = client.db('blog-app')
-    
-    // Find all writers (users with isWriter: true)
-    const writers = await db.collection('users')
+    // Fetch all users with isWriter: true
+    const writers = await db
+      .collection('users')
       .find({ isWriter: true })
-      .project({
-        firstName: 1,
-        lastName: 1,
-        email: 1,
-        profile: 1,
-        articlesPublished: { $ifNull: ['$profile.articlesPublished', 0] },
-        followers: { $ifNull: ['$profile.followers', 0] },
-        likes: { $ifNull: ['$profile.likes', 0] },
-        specialty: { $ifNull: ['$profile.specialty', 'General'] },
-        bio: { $ifNull: ['$profile.bio', ''] },
-        featured: { $ifNull: ['$profile.featured', false] }
-      })
+      .sort({ createdAt: -1 })
       .toArray()
 
-    // Format the writers data
-    const formattedWriters = writers.map(writer => ({
-      name: `${writer.firstName} ${writer.lastName}`,
-      bio: writer.bio,
-      avatar: writer.profile?.profileImageUrl || '',
-      initials: `${writer.firstName[0]}${writer.lastName[0]}`,
-      specialty: writer.specialty,
-      articles: writer.articlesPublished,
-      followers: writer.followers >= 1000 ? `${(writer.followers / 1000).toFixed(1)}K` : writer.followers.toString(),
-      likes: writer.likes >= 1000 ? `${(writer.likes / 1000).toFixed(1)}K` : writer.likes.toString(),
-      featured: writer.featured,
-      email: writer.email
+    // Convert ObjectId to string for JSON serialization
+    const serializedWriters = writers.map(writer => ({
+      ...writer,
+      _id: writer._id.toString(),
+      createdAt: writer.createdAt ? writer.createdAt.toISOString() : new Date().toISOString(),
+      updatedAt: writer.updatedAt ? writer.updatedAt.toISOString() : new Date().toISOString()
     }))
 
-    return NextResponse.json({ 
-      success: true,
-      data: {
-        writers: formattedWriters
-      }
-    })
-    
+    return NextResponse.json({ success: true, writers: serializedWriters })
   } catch (error) {
     console.error('Error fetching writers:', error)
     return NextResponse.json(
+      { success: false, error: 'Failed to fetch writers' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const { id, status } = await request.json()
+    
+    if (!id || !status) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    const { db } = await connectToDatabase()
+    
+    if (!db) {
+      throw new Error('Database connection failed')
+    }
+
+    // Update user's writer status
+    const result = await db.collection('users').updateOne(
+      { _id: new ObjectId(id) },
       { 
-        success: false, 
-        message: 'Failed to fetch writers',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      },
+        $set: { 
+          writerStatus: status,
+          isWriter: status === 'approved', // Set isWriter based on approval status
+          updatedAt: new Date()
+        } 
+      }
+    )
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Writer not found' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error updating writer status:', error)
+    return NextResponse.json(
+      { success: false, error: 'Failed to update writer status' },
       { status: 500 }
     )
   }

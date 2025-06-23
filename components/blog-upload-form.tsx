@@ -157,7 +157,27 @@ export function BlogUploadForm() {
       }
 
       toast.success(data.message)
-      handleChange("isDraft", action === 'save')
+      
+      // Reset form after successful submission
+      setFormData({
+        titles: [],
+        excerpts: [],
+        contents: [],
+        category: "",
+        tags: [],
+        featuredImage: null,
+        publishDate: "",
+        seoTitle: "",
+        seoDescription: "",
+        isDraft: true,
+        allowComments: true
+      })
+      setCurrentTag("")
+      
+      // Reset file input if it exists
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
       
       // Optionally redirect to the blog post page
       // if (data.data?.id) {
