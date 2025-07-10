@@ -220,8 +220,8 @@ export function LoginForm() {
               </form>
             </CardContent>
 
-            <CardFooter className="text-center">
-              <p className="text-sm text-muted-foreground">
+            <CardFooter className=" ml-[5rem] ">
+              <p className="text-sm text-muted-foreground ">
                 Don't have an account?{" "}
                 <Link href="/auth/signup" className="text-coral-600 hover:text-coral-500 font-medium">
                   Sign up

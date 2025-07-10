@@ -167,7 +167,7 @@ export function Navigation() {
                 </motion.a>
               )}
               {/* <motion.a
-                href="/newsletter"
+                href="/newletter"
                 className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
                 whileHover={{ y: -2 }}
                 initial={{ opacity: 0, y: -20 }}
