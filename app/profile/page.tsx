@@ -508,28 +508,28 @@ export default function ProfilePage() {
                     ) : (
                       <div className="space-y-3">
                         {profile.website && (
-                          <a href={profile.website} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
-                            <Globe className="h-4 w-4" />
-                            <span className="text-sm">{profile.website}</span>
-                          </a>
+                        <a href={profile.website} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
+                          <Globe className="h-4 w-4" />
+                          <span className="text-sm">{profile.website}</span>
+                        </a>
                         )}
                         {profile.twitter && (
                           <a href={`https://twitter.com/${profile.twitter?.replace?.('@', '') || ''}`} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
-                            <Twitter className="h-4 w-4" />
-                            <span className="text-sm">{profile.twitter}</span>
-                          </a>
+                          <Twitter className="h-4 w-4" />
+                          <span className="text-sm">{profile.twitter}</span>
+                        </a>
                         )}
                         {profile.linkedin && (
-                          <a href={`https://linkedin.com/in/${profile.linkedin}`} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
-                            <Linkedin className="h-4 w-4" />
-                            <span className="text-sm">{profile.linkedin}</span>
-                          </a>
+                        <a href={`https://linkedin.com/in/${profile.linkedin}`} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
+                          <Linkedin className="h-4 w-4" />
+                          <span className="text-sm">{profile.linkedin}</span>
+                        </a>
                         )}
                         {profile.github && (
-                          <a href={`https://github.com/${profile.github}`} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
-                            <Github className="h-4 w-4" />
-                            <span className="text-sm">{profile.github}</span>
-                          </a>
+                        <a href={`https://github.com/${profile.github}`} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
+                          <Github className="h-4 w-4" />
+                          <span className="text-sm">{profile.github}</span>
+                        </a>
                         )}
                       </div>
                     )}

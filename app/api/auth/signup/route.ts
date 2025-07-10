@@ -60,6 +60,7 @@ export async function POST(request: Request) {
       password: hashedPassword,
       role: 'user',
       isVerified: false,
+      isWriter: false,
       createdAt: new Date(),
       updatedAt: new Date(),
       _id: new ObjectId()

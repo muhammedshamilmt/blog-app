@@ -91,6 +91,8 @@ export function Navigation() {
     { name: "Home", href: "/" },
     { name: "Articles", href: "/articles" },
     { name: "Categories", href: "/categories" },
+    { name: "Write", href: "/write" },
+    { name: "Uploads", href: "/upload" },
     { name: "Contact", href: "/contact" },
     { name: "Writers", href: "/writers" },
   ]
@@ -142,6 +144,38 @@ export function Navigation() {
               >
                 Articles
               </motion.a>
+              <motion.a
+                href="/write"
+                className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
+                whileHover={{ y: -2 }}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                Write
+              </motion.a>
+              {user?.isWriter && (
+                <motion.a
+                  href="/upload"
+                  className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
+                  whileHover={{ y: -2 }}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  Uploads
+                </motion.a>
+              )}
+              {/* <motion.a
+                href="/newsletter"
+                className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
+                whileHover={{ y: -2 }}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                Newsletter
+              </motion.a> */}
               <motion.a
                 href="/categories"
                 className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
