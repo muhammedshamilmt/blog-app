@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Calendar, Clock, ArrowUpRight, Heart, MessageCircle, Bookmark } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Image as IKImage } from "@imagekit/next";
 
 interface BlogCardProps {
   id?: string
@@ -24,6 +25,7 @@ interface BlogCardProps {
   likes?: number
   comments?: number
   index?: number
+  onClick?: (id?: string) => void
 }
 
 export function BlogCard({
@@ -39,7 +41,8 @@ export function BlogCard({
   featured = false,
   likes = 0,
   comments = 0,
-  index = 0
+  index = 0,
+  onClick
 }: BlogCardProps) {
   
   console.log("Blog card rendered:", seoTitle)
@@ -48,7 +51,7 @@ export function BlogCard({
     <motion.article
       className={`group bg-card border rounded-xl overflow-hidden card-hover ${
         featured ? 'lg:col-span-2 lg:row-span-2' : ''
-      }`}
+      } ${onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`}
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-100px" }}
@@ -58,26 +61,37 @@ export function BlogCard({
         ease: "easeOut"
       }}
       whileHover={{ y: -8 }}
+      onClick={() => onClick && onClick(id)}
     >
       {/* Image */}
       {image && (
         <div className="relative overflow-hidden">
-          <div 
-            className={`bg-gradient-to-br from-navy-500 to-coral-500 ${
-              featured ? 'aspect-[16/9]' : 'aspect-[4/3]'
-            }`}
+          {image.startsWith("https://ik.imagekit.io/1tgcghv") ? (
+            <IKImage
+              urlEndpoint="https://ik.imagekit.io/1tgcghv"
+              src={image.replace("https://ik.imagekit.io/1tgcghv", "")}
+              width={featured ? 800 : 400}
+              height={featured ? 450 : 300}
+              alt={seoTitle}
+              className={`w-full object-cover ${featured ? 'aspect-[16/9]' : 'aspect-[4/3]'} rounded-t-xl`}
+            />
+          ) : (
+            <img
+              src={image}
+              alt={seoTitle}
+              className={`w-full object-cover ${featured ? 'aspect-[16/9]' : 'aspect-[4/3]'} rounded-t-xl`}
+            />
+          )}
+          <div className="absolute inset-0 bg-black/20" />
+          <motion.div
+            className="absolute top-4 right-4"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
           >
-            <div className="absolute inset-0 bg-black/20" />
-            <motion.div
-              className="absolute top-4 right-4"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <Button size="icon" variant="ghost" className="h-8 w-8 bg-white/20 backdrop-blur-sm hover:bg-white/30">
-                <Bookmark className="h-4 w-4 text-white" />
-              </Button>
-            </motion.div>
-          </div>
+            <Button size="icon" variant="ghost" className="h-8 w-8 bg-white/20 backdrop-blur-sm hover:bg-white/30">
+              <Bookmark className="h-4 w-4 text-white" />
+            </Button>
+          </motion.div>
         </div>
       )}
 
@@ -102,7 +116,7 @@ export function BlogCard({
         <h3 className={`font-bold mb-3 leading-tight group-hover:text-coral-600 transition-colors ${
           featured ? 'text-2xl lg:text-3xl' : 'text-xl'
         }`}>
-          <a href={id ? `/articles/${id}` : "#"} className="after:absolute after:inset-0">
+          <a href={id ? `/articles/${id}` : "#"} className="after:absolute after:inset-0" onClick={e => onClick ? e.preventDefault() : undefined}>
             {seoTitle}
           </a>
         </h3>

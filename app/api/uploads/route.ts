@@ -40,10 +40,15 @@ export async function GET(request: Request) {
     // Serialize the data for client-side consumption
     const serializedUploads = uploads.map(upload => ({
       ...upload,
+      featuredImage: typeof upload.featuredImage === 'string' ? upload.featuredImage : '',
+      author: (upload.author && typeof upload.author === 'object' && typeof upload.author.name === 'string' && typeof upload.author.email === 'string')
+        ? upload.author
+        : { name: '', email: '' },
       _id: upload._id.toString(),
       createdAt: upload.createdAt ? upload.createdAt.toISOString() : new Date().toISOString(),
       updatedAt: upload.updatedAt ? upload.updatedAt.toISOString() : new Date().toISOString(),
-      publishedAt: upload.publishedAt ? upload.publishedAt.toISOString() : new Date().toISOString()
+      publishedAt: upload.publishedAt ? upload.publishedAt.toISOString() : new Date().toISOString(),
+      comments: Array.isArray(upload.comments) ? upload.comments.length : (typeof upload.comments === 'number' ? upload.comments : 0)
     }));
 
     return NextResponse.json({
@@ -67,9 +72,10 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { id, status } = await request.json();
+    const body = await request.json();
+    const { id, status } = body;
     
-    if (!id || !status) {
+    if (!id && !status) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
         { status: 400 }
@@ -80,6 +86,14 @@ export async function PATCH(request: Request) {
     
     if (!db) {
       throw new Error("Database connection failed");
+    }
+
+    // Only handle status update logic
+    if (!status) {
+      return NextResponse.json(
+        { success: false, error: "Missing required fields" },
+        { status: 400 }
+      );
     }
 
     // Map the status to the correct value

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -18,52 +18,35 @@ interface BlogCommentsProps {
 export function BlogComments({ id }: BlogCommentsProps) {
   const [newComment, setNewComment] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [comments, setComments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [showReplies, setShowReplies] = useState<{ [createdAt: string]: boolean }>({});
 
-  // Mock comments data
-  const comments = [
-    {
-      id: "1",
-      author: {
-        name: "Alex Rivera",
-        avatar: "",
-        initials: "AR",
-        verified: true
-      },
-      content: "This is exactly what I've been thinking about lately. The collaboration between AI and human creativity is fascinating. I've been experimenting with AI tools in my design work and the results are incredible when you know how to guide them properly.",
-      timestamp: "2 hours ago",
-      likes: 12,
-      replies: 3,
-      liked: false
-    },
-    {
-      id: "2", 
-      author: {
-        name: "Jordan Kim",
-        avatar: "",
-        initials: "JK",
-        verified: false
-      },
-      content: "Great article! I'm curious about the long-term implications for creative professionals. Do you think AI will eventually make certain creative roles obsolete, or will it create new opportunities?",
-      timestamp: "4 hours ago",
-      likes: 8,
-      replies: 1,
-      liked: true
-    },
-    {
-      id: "3",
-      author: {
-        name: "Sam Chen",
-        avatar: "",
-        initials: "SC",
-        verified: false
-      },
-      content: "I've been using AI writing tools for content creation and while they're helpful, nothing beats the human touch for emotional resonance and cultural nuance. The future is definitely in collaboration, not replacement.",
-      timestamp: "6 hours ago",
-      likes: 15,
-      replies: 0,
-      liked: false
-    }
-  ]
+  useEffect(() => {
+    const fetchComments = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/comments?blogId=${id}`);
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setComments(data.comments || []);
+        } else {
+          setComments([]);
+          setError(data.message || 'Failed to fetch comments');
+        }
+      } catch (err: any) {
+        setComments([]);
+        setError('Failed to fetch comments');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchComments();
+  }, [id]);
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -72,21 +55,128 @@ export function BlogComments({ id }: BlogCommentsProps) {
       return
     }
 
+    const authorName = 'Anonymous';
+
     setIsSubmitting(true)
-    console.log("Submitting comment for article:", id, newComment)
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false)
-      setNewComment("")
-      toast.success("Comment posted successfully!")
-    }, 1500)
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commentContent: newComment,
+          authorName,
+          blogId: id,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setNewComment("");
+        toast.success("Comment posted successfully!");
+        // Refetch comments after posting
+        const fetchComments = async () => {
+          setLoading(true);
+          setError(null);
+          try {
+            const res = await fetch(`/api/comments?blogId=${id}`);
+            const data = await res.json();
+            if (res.ok && data.success) {
+              setComments(data.comments || []);
+            } else {
+              setComments([]);
+              setError(data.message || 'Failed to fetch comments');
+            }
+          } catch (err: any) {
+            setComments([]);
+            setError('Failed to fetch comments');
+          } finally {
+            setLoading(false);
+          }
+        };
+        fetchComments();
+      } else {
+        toast.error(data.message || 'Failed to post comment');
+      }
+    } catch (error) {
+      toast.error('Failed to post comment');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  const handleLikeComment = (commentId: string) => {
-    console.log("Liking comment:", commentId)
-    toast.success("Comment liked!")
+  const handleLikeComment = async (commentCreatedAt: string) => {
+    // Optimistically update UI
+    setComments((prev) => prev.map((c) => {
+      if (c.createdAt === commentCreatedAt) {
+        return { ...c, likes: (c.likes || 0) + 1 };
+      }
+      return c;
+    }));
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blogId: id, commentCreatedAt }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        toast.error(data.message || 'Failed to like comment');
+      }
+    } catch (error) {
+      toast.error('Failed to like comment');
+    }
   }
+
+  // Add reply handler
+  const handleReplySubmit = async (parentCreatedAt: string) => {
+    if (!replyText.trim()) {
+      toast.error("Please write a reply before submitting");
+      return;
+    }
+    const authorName = 'Anonymous';
+    try {
+      const res = await fetch('/api/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commentContent: replyText,
+          authorName,
+          blogId: id,
+          parentCommentCreatedAt: parentCreatedAt,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setReplyText("");
+        setReplyingTo(null);
+        toast.success("Reply posted successfully!");
+        // Refetch comments after posting reply
+        const fetchComments = async () => {
+          setLoading(true);
+          setError(null);
+          try {
+            const res = await fetch(`/api/comments?blogId=${id}`);
+            const data = await res.json();
+            if (res.ok && data.success) {
+              setComments(data.comments || []);
+            } else {
+              setComments([]);
+              setError(data.message || 'Failed to fetch comments');
+            }
+          } catch (err: any) {
+            setComments([]);
+            setError('Failed to fetch comments');
+          } finally {
+            setLoading(false);
+          }
+        };
+        fetchComments();
+      } else {
+        toast.error(data.message || 'Failed to post reply');
+      }
+    } catch (error) {
+      toast.error('Failed to post reply');
+    }
+  };
 
   return (
     <section className="py-20 bg-gradient-to-b from-background to-muted/20">
@@ -142,9 +232,25 @@ export function BlogComments({ id }: BlogCommentsProps) {
 
               {/* Comments List */}
               <div className="space-y-6">
-                {comments.map((comment, index) => (
+                {loading && <p className="text-center py-8">Loading comments...</p>}
+                {error && <p className="text-center py-8 text-red-500">{error}</p>}
+                {!loading && !error && comments.length === 0 && (
+                  <p className="text-center py-8 text-muted-foreground">No comments yet. Be the first to share your thoughts!</p>
+                )}
+                {!loading && !error && comments.length > 0 && comments.map((comment, index) => {
+                  // Patch: Map backend comment structure to frontend expectation
+                  const authorName = comment.authorName || 'Anonymous';
+                  const initials = authorName
+                    .split(' ')
+                    .map((n: string) => n[0])
+                    .join('')
+                    .toUpperCase();
+                  const createdAt = comment.createdAt
+                    ? new Date(comment.createdAt).toLocaleString()
+                    : '';
+                  return (
                   <motion.div
-                    key={comment.id}
+                      key={comment._id || comment.id || index}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
@@ -153,22 +259,19 @@ export function BlogComments({ id }: BlogCommentsProps) {
                   >
                     <div className="flex space-x-4">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
+                          {/* No avatar in backend, so fallback to initials */}
+                          <AvatarImage src={''} alt={authorName} />
                         <AvatarFallback className="bg-navy-500 text-white text-sm">
-                          {comment.author.initials}
+                            {initials}
                         </AvatarFallback>
                       </Avatar>
 
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center space-x-2">
-                          <h5 className="font-semibold text-sm">{comment.author.name}</h5>
-                          {comment.author.verified && (
-                            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
-                              Verified
-                            </Badge>
-                          )}
+                            <h5 className="font-semibold text-sm">{authorName}</h5>
+                            {/* No verified info in backend */}
                           <span className="text-xs text-muted-foreground">•</span>
-                          <span className="text-xs text-muted-foreground">{comment.timestamp}</span>
+                            <span className="text-xs text-muted-foreground">{createdAt}</span>
                         </div>
 
                         <p className="text-sm leading-relaxed text-muted-foreground">
@@ -179,34 +282,82 @@ export function BlogComments({ id }: BlogCommentsProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className={`h-8 px-2 ${comment.liked ? 'text-red-500' : 'text-muted-foreground'}`}
-                            onClick={() => handleLikeComment(comment.id)}
+                              className={`h-8 px-2 text-muted-foreground`}
+                              onClick={() => handleLikeComment(comment.createdAt)}
                           >
-                            <Heart className={`h-4 w-4 mr-1 ${comment.liked ? 'fill-current' : ''}`} />
-                            {comment.likes}
+                              <Heart className={`h-4 w-4 mr-1`} />
+                              {/* No likes in backend, default to 0 */}
+                              {comment.likes || 0}
                           </Button>
 
-                          <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground">
+                            
+
+                            {/* No replies in backend, default to 0 */}
+                            {/* Replies button removed since replies are always 0 */}
+
+                            <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground ml-auto" onClick={() => setShowReplies((prev) => ({ ...prev, [comment.createdAt]: !prev[comment.createdAt] }))}>
                             <Reply className="h-4 w-4 mr-1" />
                             Reply
-                          </Button>
-
-                          {comment.replies > 0 && (
-                            <Button variant="ghost" size="sm" className="h-8 px-2 text-coral-600">
-                              View {comment.replies} {comment.replies === 1 ? 'reply' : 'replies'}
                             </Button>
+                          </div>
+                          {/* Reply form, only show if replyingTo === comment.createdAt */}
+                          {replyingTo === comment.createdAt && (
+                            <form onSubmit={e => { e.preventDefault(); handleReplySubmit(comment.createdAt); }} className="mt-2 space-y-2">
+                              <Textarea
+                                placeholder="Write your reply..."
+                                value={replyText}
+                                onChange={e => setReplyText(e.target.value)}
+                                className="min-h-[60px] resize-none"
+                              />
+                              <div className="flex gap-2">
+                                <Button type="submit" size="sm" className="bg-navy-900 hover:bg-navy-600">Post Reply</Button>
+                                <Button type="button" size="sm" variant="outline" onClick={() => { setReplyingTo(null); setReplyText(""); }}>Cancel</Button>
+                              </div>
+                            </form>
                           )}
-
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground ml-auto">
-                            <MoreHorizontal className="h-4 w-4" />
+                          {/* Show replies if toggled */}
+                          {showReplies[comment.createdAt] && (
+                            <div className="ml-8 mt-2 space-y-4">
+                              {Array.isArray(comment.replies) && comment.replies.length > 0 ? (
+                                comment.replies.map((reply: any, rIdx: number) => {
+                                  const replyAuthor = reply.authorName || 'Anonymous';
+                                  const replyInitials = replyAuthor.split(' ').map((n: string) => n[0]).join('').toUpperCase();
+                                  const replyCreatedAt = reply.createdAt ? new Date(reply.createdAt).toLocaleString() : '';
+                                  return (
+                                    <div key={reply.createdAt || rIdx} className="flex space-x-3">
+                                      <Avatar className="h-8 w-8">
+                                        <AvatarImage src={''} alt={replyAuthor} />
+                                        <AvatarFallback className="bg-navy-500 text-white text-xs">{replyInitials}</AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1">
+                                        <div className="flex items-center space-x-2">
+                                          <span className="font-semibold text-xs">{replyAuthor}</span>
+                                          <span className="text-xs text-muted-foreground">•</span>
+                                          <span className="text-xs text-muted-foreground">{replyCreatedAt}</span>
+                                        </div>
+                                        <p className="text-xs leading-relaxed text-muted-foreground">{reply.content}</p>
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <p className="text-xs text-muted-foreground">No replies yet.</p>
+                              )}
+                              {/* Reply button to open reply form */}
+                              {replyingTo !== comment.createdAt && (
+                                <Button size="sm" variant="outline" className="mt-2" onClick={() => setReplyingTo(comment.createdAt)}>
+                                  Reply to this comment
                           </Button>
+                              )}
                         </div>
+                          )}
                       </div>
                     </div>
 
                     {index < comments.length - 1 && <Separator className="ml-14" />}
                   </motion.div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Load More Comments */}

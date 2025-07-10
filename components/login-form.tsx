@@ -61,6 +61,14 @@ export function LoginForm() {
 
       // Login successful - update user context
       login(data.data.user)
+      // Store email and name in localStorage
+      if (data.data.user) {
+        const firstName = (data.data.user.firstName || '').trim();
+        const lastName = (data.data.user.lastName || '').trim();
+        const userName = `${firstName} ${lastName}`.replace(/\s+/g, ' ').trim();
+        localStorage.setItem('userEmail', data.data.user.email || '');
+        localStorage.setItem('userName', userName);
+      }
       
       toast.success(data.message)
       

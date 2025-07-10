@@ -1,111 +1,154 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useTheme } from "next-themes"
-import { Button } from "@/components/ui/button"
-import { Moon, Sun, Menu, X, BookOpen, PenTool, User, Mail, LogOut, Settings, LayoutDashboard } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useUser } from "@/contexts/user-context"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useUser } from "@/contexts/user-context"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useTheme } from "next-themes"
+import { 
+  Sun, 
+  Moon, 
+  Menu, 
+  X, 
+  User, 
+  LogOut, 
+  LayoutDashboard 
+} from "lucide-react"
+
+interface ProfileData {
+  profileImageUrl?: string
+  firstName?: string
+  lastName?: string
+}
 
 export function Navigation() {
+  const { user, logout, isLoading } = useUser()
+  const { theme, setTheme } = useTheme()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { setTheme, theme } = useTheme()
-  const { user, logout } = useUser()
-  const router = useRouter()
+  const [profileData, setProfileData] = useState<ProfileData | null>(null)
+
+  // Fetch profile data when user is available
+  useEffect(() => {
+    if (user?.email) {
+      const fetchProfileData = async () => {
+        try {
+          const response = await fetch(`/api/profile/get?email=${encodeURIComponent(user.email)}`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.success && data.data) {
+              setProfileData({
+                profileImageUrl: data.data.profile?.profileImageUrl,
+                firstName: data.data.firstName,
+                lastName: data.data.lastName
+              })
+            }
+          }
+        } catch (error) {
+          console.error('Failed to fetch profile data:', error)
+        }
+      }
+      fetchProfileData()
+    }
+  }, [user?.email])
+
+  const handleScroll = () => {
+    setIsScrolled(window.scrollY > 0)
+  }
 
   useEffect(() => {
-    console.log("Navigation component mounted")
-    
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
-      console.log("Scroll position:", window.scrollY)
-    }
-
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const navItems = [
-    { name: "Articles", href: "/articles" },
-    { name: "About", href: "/about" },
-    { name: "Write", href: "/write" },
-  ];
-  if (user?.role?.toLowerCase() === 'writer' || user?.isWriter) {
-    navItems.push({ name: "Upload", href: "/upload" });
-  }
-  if (user?.isSubscribed) {
-    navItems.push({ name: "Newsletter", href: "/newsletter" });
-  }
-
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
-    console.log("Mobile menu toggled:", !isMobileMenuOpen)
   }
 
   const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark"
-    setTheme(newTheme)
-    console.log("Theme changed to:", newTheme)
+    setTheme(theme === "light" ? "dark" : "light")
   }
 
-  const handleLogout = () => {
-    logout()
-    router.push('/auth/login')
+  const handleLogout = async () => {
+    await logout()
   }
+
+  if (isLoading) {
+    // Optionally, return a skeleton or null while loading
+    return null;
+  }
+
+  const navItems = [
+    { name: "Home", href: "/" },
+    { name: "Articles", href: "/articles" },
+    { name: "Categories", href: "/categories" },
+    { name: "Contact", href: "/contact" },
+    { name: "Writers", href: "/writers" },
+  ]
 
   return (
     <>
-      <motion.nav 
+      <motion.nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          isScrolled ? 'nav-blur shadow-sm' : 'bg-transparent'
+          isScrolled
+            ? "bg-background/80 backdrop-blur-md border-b border-border"
+            : "bg-transparent"
         }`}
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        transition={{ duration: 0.5 }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <motion.div 
-              className="flex items-center space-x-2"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5 }}
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-navy-900 to-coral-500 rounded-lg flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-white" />
-              </div>
-              <Link href="/">
-                <h1 className="text-xl font-bold text-gradient">Editorial</h1>
+              <Link href="/" className="text-2xl font-bold text-navy-900 dark:text-white">
+                BlogApp
               </Link>
             </motion.div>
 
-            {/* Desktop Navigation */}
+            {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
-              {navItems.map((item, index) => (
-                <motion.a
-                  key={item.name}
-                  href={item.href}
-                  className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
-                  whileHover={{ y: -2 }}
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <span>{item.name}</span>
-                </motion.a>
-              ))}
+              <motion.a
+                href="/"
+                className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
+                whileHover={{ y: -2 }}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                Home
+              </motion.a>
+              <motion.a
+                href="/articles"
+                className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
+                whileHover={{ y: -2 }}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                Articles
+              </motion.a>
               <motion.a
                 href="/categories"
                 className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
                 whileHover={{ y: -2 }}
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.3 }}
               >
                 Categories
               </motion.a>
@@ -164,9 +207,12 @@ export function Navigation() {
                       className="relative h-9 w-9 rounded-full"
                     >
                       <Avatar className="h-9 w-9">
-                        <AvatarImage src={`https://avatar.vercel.sh/${user.email}.png`} alt={user.firstName} />
+                        <AvatarImage 
+                          src={profileData?.profileImageUrl || `https://avatar.vercel.sh/${user.email}.png`} 
+                          alt={profileData?.firstName || user.firstName} 
+                        />
                         <AvatarFallback>
-                          {user.firstName[0]}{user.lastName[0]}
+                          {(profileData?.firstName || user.firstName)?.[0]}{(profileData?.lastName || user.lastName)?.[0]}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -174,7 +220,12 @@ export function Navigation() {
                   <DropdownMenuContent align="end" className="w-56">
                     <div className="flex items-center justify-start gap-2 p-2">
                       <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium">{user.firstName} {user.lastName}</p>
+                        <p className="font-medium">
+                          {profileData?.firstName && profileData?.lastName 
+                            ? `${profileData.firstName} ${profileData.lastName}`
+                            : `${user.firstName} ${user.lastName}`
+                          }
+                        </p>
                         <p className="w-[200px] truncate text-sm text-muted-foreground">
                           {user.email}
                         </p>

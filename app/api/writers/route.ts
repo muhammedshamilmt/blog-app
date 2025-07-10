@@ -18,14 +18,26 @@ export async function GET() {
       .toArray()
 
     // Convert ObjectId to string for JSON serialization
-    const serializedWriters = writers.map(writer => ({
-      ...writer,
-      _id: writer._id.toString(),
-      createdAt: writer.createdAt ? writer.createdAt.toISOString() : new Date().toISOString(),
-      updatedAt: writer.updatedAt ? writer.updatedAt.toISOString() : new Date().toISOString()
-    }))
+    const serializedWriters = writers.map(writer => {
+      const firstName = (writer.firstName || '').trim();
+      const lastName = (writer.lastName || '').trim();
+      const name = `${firstName} ${lastName}`.replace(/\s+/g, ' ').trim() || 'Anonymous';
+      const initials = name.split(' ').map((n) => n[0]).join('').toUpperCase() || 'A';
+      return {
+        name,
+        bio: writer.profile?.bio || '',
+        avatar: writer.profile?.profileImageUrl || '',
+        initials,
+        specialty: writer.profile?.specialty || 'Writer',
+        articles: writer.profile?.articlesPublished || 0,
+        likes: writer.profile?.likes || 0,
+        featured: !!writer.featured,
+        email: writer.email,
+        profile: writer.profile || {}, // <-- Always include full profile object
+      };
+    });
 
-    return NextResponse.json({ success: true, writers: serializedWriters })
+    return NextResponse.json({ success: true, data: { writers: serializedWriters } })
   } catch (error) {
     console.error('Error fetching writers:', error)
     return NextResponse.json(

@@ -14,7 +14,7 @@ export default function ArticlesPage() {
       <ReadingProgress />
       <Navigation />
       <ArticlesHero />
-      <FeaturedArticles />
+      {/* <FeaturedArticles /> */}
       <BlogGrid />
       <Footer />
       <FloatingActions />

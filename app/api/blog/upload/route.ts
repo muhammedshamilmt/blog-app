@@ -1,11 +1,39 @@
 import { NextResponse } from 'next/server'
 import clientPromise from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
     // Parse and validate the incoming data
     const formData = await request.json()
+    
+    // Get user info from request body (from localStorage on client)
+    let author = { name: '', email: '' };
+    if (formData.authorName && formData.authorEmail) {
+      author = {
+        name: formData.authorName,
+        email: formData.authorEmail
+      };
+    } else {
+      // Fallback to cookies
+      try {
+        const cookieStore = cookies();
+        const userDataCookie = cookieStore.get('userData');
+        if (userDataCookie?.value) {
+          const userData = JSON.parse(userDataCookie.value);
+          const firstName = (userData.firstName || '').trim();
+          const lastName = (userData.lastName || '').trim();
+          const name = `${firstName} ${lastName}`.replace(/\s+/g, ' ').trim();
+          author = {
+            name,
+            email: userData.email || ''
+          };
+        }
+      } catch (err) {
+        // If parsing fails, leave author as empty strings
+      }
+    }
     
     // Validate required fields
     if (!formData.titles || !Array.isArray(formData.titles) || formData.titles.length === 0) {
@@ -44,7 +72,7 @@ export async function POST(request: Request) {
       contents: formData.contents,
       category: formData.category || '',
       tags: formData.tags || [],
-      featuredImage: null, // We'll handle file upload separately
+      featuredImage: typeof formData.featuredImage === 'string' ? formData.featuredImage : null,
       publishDate: formData.publishDate ? new Date(formData.publishDate) : null,
       seoTitle: formData.seoTitle || '',
       seoDescription: formData.seoDescription || '',
@@ -53,7 +81,8 @@ export async function POST(request: Request) {
       createdAt: new Date(),
       updatedAt: new Date(),
       status: formData.isDraft ? 'draft' : 'published',
-      _id: new ObjectId()
+      _id: new ObjectId(),
+      author,
     }
     
     // Insert into uploads collection

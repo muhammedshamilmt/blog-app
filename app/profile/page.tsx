@@ -30,7 +30,8 @@ import {
   Twitter,
   Linkedin,
   Github,
-  Instagram
+  Instagram,
+  X
 } from "lucide-react"
 import { toast } from "sonner"
 import { Navigation } from "@/components/navigation"
@@ -42,8 +43,8 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [profile, setProfile] = useState({
-    name: user ? `${user.firstName} ${user.lastName}` : '',
-    email: user?.email || '',
+    name: user && user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : '',
+    email: user && user.email ? user.email : '',
     phone: '',
     location: '',
     bio: '',
@@ -56,11 +57,13 @@ export default function ProfilePage() {
     articlesPublished: 0,
     totalViews: '0',
     followers: 0,
-    image: user?.email ? `https://avatar.vercel.sh/${user.email}.png` : '',
+    image: user && user.email ? `https://avatar.vercel.sh/${user.email}.png` : '',
     isWriter: false,
-    isSubscribed: false
+    isSubscribed: false,
+    specialties: [] as string[]
   })
 
+  const [newSpecialty, setNewSpecialty] = useState('')
   const [preferences, setPreferences] = useState({
     emailNotifications: true,
     commentNotifications: true,
@@ -83,10 +86,30 @@ export default function ProfilePage() {
         const res = await fetch(`/api/profile/get?email=${encodeURIComponent(user.email)}`)
         const data = await res.json()
         
-        if (data.success && data.data.profile) {
-          setProfile(data.data.profile)
-          if (data.data.profile.preferences) {
-            setPreferences(data.data.profile.preferences)
+        if (data.success && data.data) {
+          const userData = data.data
+          setProfile({
+            name: userData.firstName && userData.lastName ? `${userData.firstName} ${userData.lastName}` : '',
+            email: userData.email || '',
+            phone: userData.profile?.phone || '',
+            location: userData.profile?.location || '',
+            bio: userData.profile?.bio || '',
+            website: userData.profile?.website || '',
+            twitter: userData.profile?.socialLinks?.twitter || '',
+            linkedin: userData.profile?.socialLinks?.linkedin || '',
+            github: userData.profile?.socialLinks?.github || '',
+            instagram: userData.profile?.socialLinks?.instagram || '',
+            joinDate: userData.createdAt ? new Date(userData.createdAt).toLocaleDateString() : '',
+            articlesPublished: userData.totalViews || userData.articles || 0,
+            totalViews: userData.totalViews?.toString() || '0',
+            followers: userData.totalFollowers || 0,
+            image: userData.profile?.profileImageUrl || `https://avatar.vercel.sh/${userData.email}.png`,
+            isWriter: userData.isWriter || false,
+            isSubscribed: userData.isSubscribed || false,
+            specialties: userData.profile?.interests || []
+          })
+          if (userData.profile?.preferences) {
+            setPreferences(userData.profile.preferences)
           }
         } else {
           toast.error('Failed to load profile data')
@@ -142,7 +165,7 @@ export default function ProfilePage() {
         },
         preferences,
         profileImageUrl: profile.image,
-        interests: [],
+        interests: profile.specialties,
         readingPreferences: {},
       },
     }
@@ -164,11 +187,28 @@ export default function ProfilePage() {
     toast.success("Preferences saved!")
   }
 
+  const addSpecialty = () => {
+    if (newSpecialty.trim() && !profile.specialties.includes(newSpecialty.trim())) {
+      setProfile({
+        ...profile,
+        specialties: [...profile.specialties, newSpecialty.trim()]
+      })
+      setNewSpecialty('')
+    }
+  }
+
+  const removeSpecialty = (specialtyToRemove: string) => {
+    setProfile({
+      ...profile,
+      specialties: profile.specialties.filter(specialty => specialty !== specialtyToRemove)
+    })
+  }
+
   const stats = [
-    { label: "Articles Published", value: profile.articlesPublished, icon: BookOpen },
-    { label: "Total Views", value: profile.totalViews, icon: Eye },
-    { label: "Followers", value: profile.followers, icon: Heart },
-    { label: "Member Since", value: profile.joinDate, icon: Calendar }
+    { label: "Articles Published", value: profile.articlesPublished || 0, icon: BookOpen },
+    { label: "Total Views", value: profile.totalViews || '0', icon: Eye },
+    { label: "Followers", value: profile.followers || 0, icon: Heart },
+    { label: "Member Since", value: profile.joinDate || 'N/A', icon: Calendar }
   ]
 
   // Function to render user badges
@@ -222,9 +262,11 @@ export default function ProfilePage() {
                 <div className="flex flex-col md:flex-row items-start md:items-end space-y-4 md:space-y-0 md:space-x-6 -mt-16">
                   <div className="relative">
                     <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
-                      <AvatarImage src={profile.image} alt={profile.name} />
+                      <AvatarImage src={profile && profile.image ? profile.image : ''} alt={profile && profile.name ? profile.name : ''} />
                       <AvatarFallback className="text-2xl font-bold bg-navy-900 text-white">
-                        {profile.name.split(' ').map(n => n[0]).join('')}
+                        {profile && profile.name && typeof profile.name === 'string'
+                          ? profile.name.split(' ').filter(Boolean).map(n => n[0]).join('')
+                          : ''}
                       </AvatarFallback>
                     </Avatar>
                     <label htmlFor="profile-image-upload" className="absolute bottom-2 right-2 rounded-full w-8 h-8 bg-coral-500 hover:bg-coral-600 flex items-center justify-center cursor-pointer">
@@ -243,10 +285,10 @@ export default function ProfilePage() {
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h1 className="text-3xl font-bold text-navy-900">{profile.name}</h1>
+                        <h1 className="text-3xl font-bold text-navy-900">{profile && profile.name ? profile.name : ''}</h1>
                         <p className="text-muted-foreground flex items-center">
                           <MapPin className="h-4 w-4 mr-1" />
-                          {profile.location}
+                          {profile && profile.location ? profile.location : ''}
                         </p>
                       </div>
                       <Button
@@ -345,6 +387,35 @@ export default function ProfilePage() {
                           rows={4}
                         />
                       </div>
+
+                      {/* Specialties Section */}
+                      <div className="space-y-2">
+                        <Label>Specialties</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Add a specialty"
+                            value={newSpecialty}
+                            onChange={(e) => setNewSpecialty(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && addSpecialty()}
+                          />
+                          <Button onClick={addSpecialty} size="sm" className="bg-coral-500 hover:bg-coral-600">
+                            Add
+                          </Button>
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {profile.specialties.map((specialty, index) => (
+                            <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                              {specialty}
+                              <button
+                                onClick={() => removeSpecialty(specialty)}
+                                className="ml-1 hover:text-red-500"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
                       
                       <Button onClick={handleSaveProfile} className="w-full bg-coral-500 hover:bg-coral-600">
                         <Save className="h-4 w-4 mr-2" />
@@ -355,20 +426,34 @@ export default function ProfilePage() {
                     <div className="space-y-4">
                       <div className="flex items-center space-x-3">
                         <Mail className="h-5 w-5 text-muted-foreground" />
-                        <span>{profile.email}</span>
+                        <span>{profile && profile.email ? profile.email : ''}</span>
                       </div>
                       <div className="flex items-center space-x-3">
                         <Phone className="h-5 w-5 text-muted-foreground" />
-                        <span>{profile.phone}</span>
+                        <span>{profile && profile.phone ? profile.phone : ''}</span>
                       </div>
                       <div className="flex items-center space-x-3">
                         <MapPin className="h-5 w-5 text-muted-foreground" />
-                        <span>{profile.location}</span>
+                        <span>{profile && profile.location ? profile.location : ''}</span>
                       </div>
                       <div className="flex items-start space-x-3">
                         <User className="h-5 w-5 text-muted-foreground mt-0.5" />
-                        <p className="text-sm leading-relaxed">{profile.bio}</p>
+                        <p className="text-sm leading-relaxed">{profile && profile.bio ? profile.bio : ''}</p>
                       </div>
+                      
+                      {/* Display Specialties */}
+                      {profile.specialties && profile.specialties.length > 0 && (
+                        <div className="flex items-start space-x-3">
+                          <Award className="h-5 w-5 text-muted-foreground mt-0.5" />
+                          <div className="flex flex-wrap gap-2">
+                            {profile.specialties.map((specialty, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {specialty}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -422,22 +507,30 @@ export default function ProfilePage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <a href={profile.website} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
-                          <Globe className="h-4 w-4" />
-                          <span className="text-sm">{profile.website}</span>
-                        </a>
-                        <a href={`https://twitter.com/${profile.twitter.replace('@', '')}`} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
-                          <Twitter className="h-4 w-4" />
-                          <span className="text-sm">{profile.twitter}</span>
-                        </a>
-                        <a href={`https://linkedin.com/in/${profile.linkedin}`} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
-                          <Linkedin className="h-4 w-4" />
-                          <span className="text-sm">{profile.linkedin}</span>
-                        </a>
-                        <a href={`https://github.com/${profile.github}`} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
-                          <Github className="h-4 w-4" />
-                          <span className="text-sm">{profile.github}</span>
-                        </a>
+                        {profile.website && (
+                          <a href={profile.website} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
+                            <Globe className="h-4 w-4" />
+                            <span className="text-sm">{profile.website}</span>
+                          </a>
+                        )}
+                        {profile.twitter && (
+                          <a href={`https://twitter.com/${profile.twitter?.replace?.('@', '') || ''}`} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
+                            <Twitter className="h-4 w-4" />
+                            <span className="text-sm">{profile.twitter}</span>
+                          </a>
+                        )}
+                        {profile.linkedin && (
+                          <a href={`https://linkedin.com/in/${profile.linkedin}`} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
+                            <Linkedin className="h-4 w-4" />
+                            <span className="text-sm">{profile.linkedin}</span>
+                          </a>
+                        )}
+                        {profile.github && (
+                          <a href={`https://github.com/${profile.github}`} className="flex items-center space-x-3 text-blue-600 hover:text-blue-800">
+                            <Github className="h-4 w-4" />
+                            <span className="text-sm">{profile.github}</span>
+                          </a>
+                        )}
                       </div>
                     )}
                   </CardContent>

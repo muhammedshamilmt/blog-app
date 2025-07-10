@@ -84,6 +84,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setUser(null)
       // Remove user data from localStorage
       localStorage.removeItem('userData')
+      localStorage.removeItem('userEmail')
+      localStorage.removeItem('userName')
       router.push('/')
     } catch (error) {
       console.error('Logout failed:', error)

@@ -36,38 +36,76 @@ export async function GET(request: Request) {
       )
     }
 
-    // Return user profile data
+    // Fetch total uploads by this user
+    let totalUploads = 0
+    let totalViews = 0
+    try {
+      const uploadsResult = await db.collection('uploads').find({ 
+        'author.email': email 
+      }).toArray()
+      
+      totalUploads = uploadsResult.length
+      totalViews = uploadsResult.reduce((sum, upload) => sum + (upload.views || 0), 0)
+    } catch (uploadError) {
+      console.error('Error fetching uploads:', uploadError)
+    }
+
+    // Calculate total followers (from other users' followers arrays)
+    let totalFollowers = 0
+    try {
+      const followersResult = await db.collection('users').aggregate([
+        {
+          $match: {
+            'profile.followers': {
+              $elemMatch: { email: email }
+            }
+          }
+        },
+        {
+          $count: 'totalFollowers'
+        }
+      ]).toArray()
+      
+      totalFollowers = followersResult.length > 0 ? followersResult[0].totalFollowers : 0
+    } catch (followersError) {
+      console.error('Error fetching followers:', followersError)
+      // Fallback to local followers count if aggregation fails
+      totalFollowers = Array.isArray(user.profile?.followers) ? user.profile.followers.length : 0
+    }
+
+    // Return full user profile data with proper structure
     return NextResponse.json({ 
       success: true, 
       data: {
+        id: user._id?.toString() || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        role: user.role || '',
+        createdAt: user.createdAt || '',
+        updatedAt: user.updatedAt || '',
         profile: {
-          name: `${user.firstName} ${user.lastName}`,
-          email: user.email,
           phone: user.profile?.phone || '',
-          location: user.profile?.location || '',
           bio: user.profile?.bio || '',
+          location: user.profile?.location || '',
           website: user.profile?.website || '',
-          twitter: user.profile?.socialLinks?.twitter || '',
-          linkedin: user.profile?.socialLinks?.linkedin || '',
-          github: user.profile?.socialLinks?.github || '',
-          instagram: user.profile?.socialLinks?.instagram || '',
-          joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '',
-          articlesPublished: user.profile?.articlesPublished || 0,
-          totalViews: user.profile?.totalViews || '0',
-          followers: user.profile?.followers || 0,
-          image: user.profile?.profileImageUrl || `https://avatar.vercel.sh/${user.email}.png`,
-          preferences: user.profile?.preferences || {
-            emailNotifications: true,
-            commentNotifications: true,
-            followerNotifications: false,
-            newsletterUpdates: true,
-            profileVisibility: true,
-            showEmail: false,
-            showPhone: false
-          },
-          isWriter: user.isWriter || false,
-          isSubscribed: user.isSubscribed || false
-        }
+          socialLinks: user.profile?.socialLinks || {},
+          preferences: user.profile?.preferences || {},
+          profileImageUrl: user.profile?.profileImageUrl || '',
+          interests: Array.isArray(user.profile?.interests) ? user.profile.interests : [],
+          readingPreferences: user.profile?.readingPreferences || {},
+          followers: user.profile?.followers || [],
+          totalViews: totalViews,
+          articlesPublished: totalUploads,
+          updatedAt: user.profile?.updatedAt || ''
+        },
+        isWriter: user.isWriter || false,
+        isSubscribed: user.isSubscribed || false,
+        writerStatus: user.writerStatus || '',
+        subscribedAt: user.subscribedAt || '',
+        articles: totalUploads,
+        totalFollowers: totalFollowers,
+        totalViews: totalViews
       }
     })
     

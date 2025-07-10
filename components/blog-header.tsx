@@ -24,6 +24,7 @@ interface BlogData {
     name: string
     avatar: string
     initials: string
+    email?: string // Added email for profile image fetching
   }
   publishDate: string
   readTime: string
@@ -40,6 +41,14 @@ export function BlogHeader({ id }: BlogHeaderProps) {
   const [blog, setBlog] = useState<BlogData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [authorImage, setAuthorImage] = useState<string | null>(null)
+
+  const hasLikedKey = blog ? `liked_${blog.id}` : '';
+  useEffect(() => {
+    if (blog && typeof window !== 'undefined') {
+      setIsLiked(!!localStorage.getItem(`liked_${blog.id}`));
+    }
+  }, [blog]);
 
   useEffect(() => {
     const fetchBlog = async () => {
@@ -62,6 +71,21 @@ export function BlogHeader({ id }: BlogHeaderProps) {
         console.log("Blog data received:", data.data)
         setBlog(data.data)
         setIsVisible(true)
+
+        // Fetch author profile image if email exists
+        const authorEmail = data.data.author?.email
+        if (authorEmail) {
+          try {
+            const profileRes = await fetch(`/api/profile/get?email=${encodeURIComponent(authorEmail)}`)
+            const profileData = await profileRes.json()
+            if (profileRes.ok && profileData.success) {
+              // Use profileImageUrl if available
+              setAuthorImage(profileData.data.profile?.profileImageUrl || profileData.data.profile?.image || '')
+            }
+          } catch (e) {
+            // Ignore profile image fetch errors
+          }
+        }
       } catch (error) {
         console.error("Error fetching blog:", error)
         setError(error instanceof Error ? error.message : 'Failed to load blog')
@@ -74,10 +98,31 @@ export function BlogHeader({ id }: BlogHeaderProps) {
     fetchBlog()
   }, [id])
 
-  const handleLike = () => {
-    setIsLiked(!isLiked)
-    toast.success(isLiked ? "Removed from likes" : "Added to likes")
-    console.log("Like toggled:", !isLiked)
+  const handleLike = async () => {
+    if (isLiked || !blog) return; // Prevent multiple likes per session
+    setIsLiked(true);
+    try {
+      const response = await fetch('/api/likes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: blog.id })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setBlog({ ...blog, likes: data.likes });
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`liked_${blog.id}`, '1');
+        }
+        toast.success('Added to likes');
+      } else {
+        setIsLiked(false);
+        // Show a generic error instead of 'Blog post not found'
+        toast.error(data.error === 'Blog post not found' ? 'Failed to like post.' : (data.error || 'Failed to like post'));
+      }
+    } catch (error) {
+      setIsLiked(false);
+      toast.error('Failed to like post');
+    }
   }
 
   const handleBookmark = () => {
@@ -187,7 +232,7 @@ export function BlogHeader({ id }: BlogHeaderProps) {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="flex items-center space-x-4">
               <Avatar className="h-12 w-12">
-                <AvatarImage src={blog.author.avatar} alt={blog.author.name} />
+                <AvatarImage src={authorImage || blog.author.avatar} alt={blog.author.name} />
                 <AvatarFallback className="bg-navy-500 text-white">
                   {blog.author.initials}
                 </AvatarFallback>
@@ -204,9 +249,10 @@ export function BlogHeader({ id }: BlogHeaderProps) {
                 variant="ghost"
                 className={`text-white hover:bg-white/10 ${isLiked ? 'text-red-400' : ''}`}
                 onClick={handleLike}
+                disabled={isLiked}
               >
                 <Heart className={`h-4 w-4 mr-1 ${isLiked ? 'fill-current' : ''}`} />
-                {blog.likes + (isLiked ? 1 : 0)}
+                {blog.likes}
               </Button>
               <Button
                 size="sm"

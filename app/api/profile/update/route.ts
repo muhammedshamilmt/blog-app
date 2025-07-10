@@ -19,15 +19,31 @@ export async function POST(request: Request) {
     const client = await clientPromise
     const db = client.db('blog-app')
 
+    // Prepare the profile update object
+    const profileUpdate = {
+      phone: profile.phone || '',
+      bio: profile.bio || '',
+      location: profile.location || '',
+      website: profile.website || '',
+      socialLinks: {
+        twitter: profile.socialLinks?.twitter || '',
+        linkedin: profile.socialLinks?.linkedin || '',
+        github: profile.socialLinks?.github || '',
+        instagram: profile.socialLinks?.instagram || '',
+      },
+      preferences: profile.preferences || {},
+      profileImageUrl: profile.profileImageUrl || '',
+      interests: Array.isArray(profile.interests) ? profile.interests : [],
+      readingPreferences: profile.readingPreferences || {},
+      updatedAt: new Date()
+    }
+
     // Update user by email, set the profile object
     const result = await db.collection('users').updateOne(
       { email },
       { 
         $set: { 
-          profile: {
-            ...profile,
-            updatedAt: new Date()
-          }
+          profile: profileUpdate
         } 
       },
       { upsert: true }
@@ -42,7 +58,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       success: true,
-      message: 'Profile updated successfully'
+      message: 'Profile updated successfully',
+      data: profileUpdate
     })
   } catch (error) {
     console.error('Error updating profile:', error)

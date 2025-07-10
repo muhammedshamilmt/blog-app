@@ -9,21 +9,30 @@ import { Filter, TrendingUp, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface BlogPost {
-  _id: string
-  title: string
-  content: string
-  author: {
-    name: string
-    email: string
+  id?: string
+  _id?: string
+  titles?: { id: string; type: string; value: string }[]
+  excerpts?: { id: string; type: string; value: string }[]
+  contents?: { id: string; type: string; value: string }[]
+  category?: string
+  tags?: string[]
+  featuredImage?: string | null
+  publishDate?: string
+  seoTitle?: string
+  seoDescription?: string
+  isDraft?: boolean
+  allowComments?: boolean
+  createdAt?: string
+  updatedAt?: string
+  status?: string
+  publishedAt?: string
+  author?: {
+    name?: string
+    email?: string
   }
-  category: string
-  type: string
-  status: string
-  publishedAt: string
-  createdAt: string
-  updatedAt: string
-  image?: string
-  attachments?: string[]
+  likes?: number
+  comments?: number
+  featured?: boolean
 }
 
 export function BlogGrid() {
@@ -108,13 +117,30 @@ export function BlogGrid() {
   }
 
   // Helper function to safely get read time
-  const getReadTime = (content: string) => {
+  const getReadTime = (post: BlogPost) => {
+    const content = post.contents?.[0]?.value || ''
     try {
       return `${Math.ceil(content.split(' ').length / 200)} min read`
     } catch {
       return '5 min read'
     }
   }
+
+  // Helper function to get a smart excerpt from content
+  const getExcerpt = (post: BlogPost) => {
+    const content = post.excerpts?.[0]?.value || post.contents?.[0]?.value || ''
+    if (!content) return '';
+    // Try to get the first paragraph or up to 150 chars
+    const firstPara = content.split(/\n\n|\r\n\r\n/)[0];
+    if (firstPara.length > 150) {
+      return firstPara.substring(0, 150) + '...';
+    }
+    if (firstPara.length > 0) {
+      return firstPara;
+    }
+    // Fallback: just take the first 150 chars
+    return content.substring(0, 150) + '...';
+  };
 
   return (
     <section id="articles" className="py-20 bg-gradient-to-b from-background to-muted/20">
@@ -196,23 +222,23 @@ export function BlogGrid() {
             >
               {blogPosts.map((post, index) => (
                 <BlogCard
-                  key={`${post._id}-${index}`}
-                  id={post._id}
-                  seoTitle={post.title || 'Untitled'}
-                  seoDescription={(post.content || '').substring(0, 150) + '...'}
+                  key={post.id || post._id || index}
+                  id={post.id || post._id}
+                  seoTitle={post.seoTitle || post.titles?.[0]?.value || 'Untitled'}
+                  seoDescription={post.seoDescription || getExcerpt(post)}
                   author={{
                     name: post.author?.name || 'Anonymous',
                     avatar: '',
                     initials: getAuthorInitials(post.author?.name || 'Anonymous')
                   }}
-                  publishDate={new Date(post.publishedAt || post.createdAt).toLocaleDateString()}
-                  readTime={getReadTime(post.content || '')}
+                  publishDate={new Date(post.publishedAt || post.publishDate || post.createdAt || '').toLocaleDateString()}
+                  readTime={getReadTime(post)}
                   category={post.category || 'Uncategorized'}
-                  tags={[post.type || 'article']}
-                  image={post.image || '/placeholder-blog.jpg'}
-                  featured={false}
-                  likes={0}
-                  comments={0}
+                  tags={post.tags || []}
+                  image={post.featuredImage || '/placeholder-blog.jpg'}
+                  featured={post.featured || false}
+                  likes={post.likes || 0}
+                  comments={Array.isArray(post.comments) ? post.comments.length : (typeof post.comments === 'number' ? post.comments : 0)}
                   index={index}
                 />
               ))}

@@ -4,11 +4,11 @@ import { ObjectId } from 'mongodb'
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     // Ensure params.id is properly awaited
-    const id = params.id
+    const { id } = await context.params;
     if (!id) {
       return NextResponse.json(
         { success: false, message: 'Blog ID is required' },
@@ -40,6 +40,29 @@ export async function GET(
         { success: false, message: 'Blog post not found' },
         { status: 404 }
       )
+    }
+
+    // Check if the author is a writer in the users DB
+    let isWriter = false;
+    let writerProfile = null;
+    let authorEmail = '';
+    if (typeof blog.author === 'object' && blog.author !== null) {
+      authorEmail = blog.author.email || '';
+    } else if (typeof blog.author === 'string') {
+      // If old format, cannot check
+      authorEmail = '';
+    }
+    if (authorEmail) {
+      const user = await db.collection('users').findOne({ email: authorEmail });
+      if (user) {
+        isWriter = !!user.isWriter;
+        writerProfile = {
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          email: user.email,
+          isWriter: !!user.isWriter,
+          // Add more fields as needed
+        };
+      }
     }
 
     // Format the blog data
@@ -146,10 +169,25 @@ export async function GET(
       structuredContent,
       tableOfContents,
       author: {
-        name: blog.author || 'Anonymous',
+        name: typeof blog.author === 'object' && blog.author !== null
+          ? blog.author.name || 'Anonymous'
+          : typeof blog.author === 'string'
+            ? blog.author
+            : 'Anonymous',
         avatar: blog.authorAvatar || '',
-        initials: (blog.author || 'A').split(' ').map((n: string) => n[0]).join('').toUpperCase()
+        initials: (typeof blog.author === 'object' && blog.author !== null
+            ? (blog.author.name || 'A')
+            : typeof blog.author === 'string'
+              ? blog.author
+              : 'A')
+          .split(' ')
+          .map((n: string) => n[0])
+          .join('')
+          .toUpperCase(),
+        email: typeof blog.author === 'object' && blog.author !== null ? blog.author.email || '' : ''
       },
+      isWriter,
+      writerProfile,
       publishDate: blog.createdAt 
         ? new Date(blog.createdAt).toLocaleDateString('en-US', {
             month: 'long',
@@ -160,7 +198,7 @@ export async function GET(
       readTime: `${readTime} min read`,
       views: blog.views || 0,
       likes: Number(blog.likes) || 0,
-      image: blog.image || '',
+      image: blog.featuredImage || blog.image || '',
       tags: Array.isArray(blog.tags) ? blog.tags : [],
       metaKeywords: Array.isArray(blog.metaKeywords) ? blog.metaKeywords : [],
       metaRobots: blog.metaRobots || 'index, follow',

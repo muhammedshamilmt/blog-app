@@ -14,7 +14,6 @@ import { Separator } from "@/components/ui/separator"
 import { BlogPreview } from "@/components/blog-preview"
 import { 
   Upload, 
-  Image as ImageIcon, 
   PenTool, 
   Tag, 
   Calendar, 
@@ -28,7 +27,15 @@ import {
   Globe,
   ArrowLeft
 } from "lucide-react"
+import { Image } from "@imagekit/next";
 import { toast } from "sonner"
+import {
+  ImageKitAbortError,
+  ImageKitInvalidRequestError,
+  ImageKitServerError,
+  ImageKitUploadNetworkError,
+  upload as imagekitUpload,
+} from "@imagekit/next";
 
 interface ContentBlock {
   id: string
@@ -43,7 +50,7 @@ export function BlogUploadForm() {
     contents: [] as ContentBlock[],
     category: "",
     tags: [] as string[],
-    featuredImage: null as File | null,
+    featuredImage: null as string | null, // Now stores the ImageKit URL string
     publishDate: "",
     seoTitle: "",
     seoDescription: "",
@@ -55,8 +62,9 @@ export function BlogUploadForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [previewMode, setPreviewMode] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
-  const handleChange = (field: string, value: string | boolean | File | null) => {
+  const handleChange = (field: string, value: string | boolean | null) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -110,17 +118,60 @@ export function BlogUploadForm() {
     }))
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+  const IMAGEKIT_URL_ENDPOINT = "https://ik.imagekit.io/1tgcghv";
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5000000) { // 5MB limit
-        toast.error("Image must be smaller than 5MB")
-        return
+      if (file.size > 5000000) {
+        toast.error("Image must be smaller than 5MB");
+        return;
       }
-      handleChange("featuredImage", file)
-      console.log("Featured image uploaded:", file.name)
+      setUploadProgress(0);
+      try {
+        // Get ImageKit upload auth params
+        const res = await fetch("/api/upload-auth");
+        if (!res.ok) {
+          throw new Error("Failed to get upload credentials");
+        }
+        const { token, expire, signature, publicKey } = await res.json();
+        // Upload to ImageKit
+        const uploadResponse = await imagekitUpload({
+          file,
+          fileName: file.name,
+          expire,
+          token,
+          signature,
+          publicKey,
+          onProgress: (event) => {
+            setUploadProgress((event.loaded / event.total) * 100);
+          },
+        });
+        // Store the uploaded image URL in formData (string)
+        if (typeof uploadResponse.url === "string") {
+          handleChange("featuredImage", uploadResponse.url);
+        } else {
+          toast.error("ImageKit did not return a valid image URL");
+        }
+        toast.success("Image uploaded successfully!");
+      } catch (error) {
+        if (error instanceof ImageKitAbortError) {
+          toast.error("Image upload aborted");
+        } else if (error instanceof ImageKitInvalidRequestError) {
+          toast.error("Invalid image upload request");
+        } else if (error instanceof ImageKitUploadNetworkError) {
+          toast.error("Network error during image upload");
+        } else if (error instanceof ImageKitServerError) {
+          toast.error("Server error during image upload");
+        } else {
+          toast.error("Image upload failed");
+        }
+        setUploadProgress(null);
+        return;
+      }
+      setUploadProgress(null);
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent, action: 'save' | 'publish') => {
     e.preventDefault()
@@ -139,6 +190,9 @@ export function BlogUploadForm() {
     setIsLoading(true)
     
     try {
+      // Get author info from localStorage
+      const authorName = typeof window !== 'undefined' ? localStorage.getItem('userName') || '' : '';
+      const authorEmail = typeof window !== 'undefined' ? localStorage.getItem('userEmail') || '' : '';
       const response = await fetch('/api/blog/upload', {
         method: 'POST',
         headers: {
@@ -146,7 +200,9 @@ export function BlogUploadForm() {
         },
         body: JSON.stringify({
           ...formData,
-          isDraft: action === 'save'
+          isDraft: action === 'save',
+          authorName,
+          authorEmail
         }),
       })
 
@@ -165,7 +221,7 @@ export function BlogUploadForm() {
         contents: [],
         category: "",
         tags: [],
-        featuredImage: null,
+        featuredImage: null, // Reset to null (string | null)
         publishDate: "",
         seoTitle: "",
         seoDescription: "",
@@ -175,8 +231,8 @@ export function BlogUploadForm() {
       setCurrentTag("")
       
       // Reset file input if it exists
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
+      if (fileInputRef.current && typeof fileInputRef.current.value === "string") {
+        fileInputRef.current.value = "";
       }
       
       // Optionally redirect to the blog post page
@@ -263,7 +319,7 @@ export function BlogUploadForm() {
           contents={formData.contents}
           category={formData.category}
           tags={formData.tags}
-          featuredImage={formData.featuredImage}
+          featuredImage={undefined}
         />
       </div>
     )
@@ -553,13 +609,24 @@ Share your knowledge, insights, and stories!"
                         onChange={handleImageUpload}
                         className="hidden"
                       />
-                      {formData.featuredImage ? (
+                      {typeof formData.featuredImage === "string" && formData.featuredImage ? (
                         <div className="space-y-2">
-                          <ImageIcon className="h-12 w-12 mx-auto text-coral-500" />
-                          <p className="text-sm font-medium">{formData.featuredImage.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {(formData.featuredImage.size / 1024 / 1024).toFixed(2)} MB
+                          <Image
+                            urlEndpoint={IMAGEKIT_URL_ENDPOINT}
+                            src={formData.featuredImage.replace(IMAGEKIT_URL_ENDPOINT, "")}
+                            width={300}
+                            height={200}
+                            alt="Featured"
+                            className="mx-auto rounded-lg"
+                          />
+                          <p className="text-sm font-medium">
+                            {formData.featuredImage.split("/").pop()}
                           </p>
+                          {uploadProgress !== null && (
+                            <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                              <div className="bg-coral-500 h-2.5 rounded-full" style={{ width: `${uploadProgress}%` }} />
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="space-y-2">

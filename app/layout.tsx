@@ -33,6 +33,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <meta name="google-site-verification" content="Ze2aFW-vR3x1r3GPnpbNKpvC_6GDSnO4l3MzolqzzWs" />
       <body className={`${inter.variable} font-inter antialiased`}>
         <AuthProvider>
           <UserProvider>
