@@ -39,7 +39,7 @@ import { Footer } from "@/components/footer"
 import { useUser } from '@/contexts/user-context'
 
 export default function ProfilePage() {
-  const { user } = useUser()
+  const { user, login } = useUser()
   const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [profile, setProfile] = useState({
@@ -62,7 +62,8 @@ export default function ProfilePage() {
     image: user && user.email ? `https://avatar.vercel.sh/${user.email}.png` : '',
     isWriter: false,
     isSubscribed: false,
-    specialties: [] as string[]
+    specialties: [] as string[],
+    readingPreferences: {} as Record<string, any>,
   })
 
   const [newSpecialty, setNewSpecialty] = useState('')
@@ -110,7 +111,8 @@ export default function ProfilePage() {
             image: userData.profile?.profileImageUrl || `https://avatar.vercel.sh/${userData.email}.png`,
             isWriter: userData.isWriter || false,
             isSubscribed: userData.isSubscribed || false,
-            specialties: userData.profile?.interests || []
+            specialties: userData.profile?.interests || [],
+            readingPreferences: userData.profile?.readingPreferences || {},
           })
           if (userData.profile?.preferences) {
             setPreferences(userData.profile.preferences)
@@ -153,37 +155,55 @@ export default function ProfilePage() {
       toast.error('No logged-in user')
       return
     }
-    // Build the correct structure
+    // Defensive: ensure all fields are present
+    const safeProfile = {
+      phone: profile.phone || '',
+      bio: profile.bio || '',
+      location: profile.location || '',
+      website: profile.website || '',
+      twitter: profile.twitter || '',
+      linkedin: profile.linkedin || '',
+      github: profile.github || '',
+      instagram: profile.instagram || '',
+      specialties: profile.specialties || [],
+      readingPreferences: profile.readingPreferences || {},
+      image: profile.image || '',
+    };
     const payload = {
       email: user.email,
       firstName: profile.firstName,
       lastName: profile.lastName,
       isWriter: typeof profile.isWriter === 'boolean' ? profile.isWriter : undefined,
       profile: {
-        phone: profile.phone,
-        bio: profile.bio,
-        location: profile.location,
-        website: profile.website,
+        phone: safeProfile.phone,
+        bio: safeProfile.bio,
+        location: safeProfile.location,
+        website: safeProfile.website,
         socialLinks: {
-          twitter: profile.twitter,
-          linkedin: profile.linkedin,
-          github: profile.github,
-          instagram: profile.instagram,
+          twitter: safeProfile.twitter,
+          linkedin: safeProfile.linkedin,
+          github: safeProfile.github,
+          instagram: safeProfile.instagram,
         },
-        preferences,
-        profileImageUrl: profile.image,
-        interests: profile.specialties,
-        readingPreferences: {},
+        preferences: preferences,
+        profileImageUrl: safeProfile.image,
+        interests: safeProfile.specialties,
+        readingPreferences: safeProfile.readingPreferences,
       },
     }
+    console.log('Profile update payload:', payload); // <-- Add this for debugging
     const res = await fetch('/api/profile/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     })
     if (res.ok) {
+      const data = await res.json();
       setIsEditing(false)
       toast.success('Profile updated successfully!')
+      if (data.success && data.data) {
+        login(data.data); // Update user context and localStorage with new user data
+      }
     } else {
       toast.error('Failed to update profile')
     }

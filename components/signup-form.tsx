@@ -72,6 +72,14 @@ export function SignupForm() {
       // Login the user and update context
       login(data.data.user)
       
+      // Store email and name in localStorage
+      if (data.data.user?.email) {
+        localStorage.setItem('userEmail', data.data.user.email);
+      }
+      if (data.data.user?.firstName || data.data.user?.lastName) {
+        localStorage.setItem('userName', `${data.data.user.firstName || ''} ${data.data.user.lastName || ''}`.trim());
+      }
+      
       toast.success(data.message)
       
       // Reset form

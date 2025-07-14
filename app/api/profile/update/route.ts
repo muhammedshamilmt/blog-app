@@ -8,8 +8,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'Email is required' }, { status: 400 })
     }
 
-    // Validate phone number format if provided
-    if (profile.phone && !/^\+?[\d\s-]{10,}$/.test(profile.phone)) {
+    // Defensive: Ensure profile is always an object
+    const safeProfile = typeof profile === 'object' && profile !== null ? profile : {}
+
+    // Validate phone number format if provided and not empty
+    if (safeProfile.phone && typeof safeProfile.phone === 'string' && safeProfile.phone.trim() !== '' && !/^\+?[\d\s-]{10,}$/.test(safeProfile.phone)) {
       return NextResponse.json(
         { success: false, message: 'Invalid phone number format' },
         { status: 400 }
@@ -19,22 +22,22 @@ export async function POST(request: Request) {
     const client = await clientPromise
     const db = client.db('blog-app')
 
-    // Prepare the profile update object
+    // Prepare the profile update object with safe defaults
     const profileUpdate = {
-      phone: profile.phone || '',
-      bio: profile.bio || '',
-      location: profile.location || '',
-      website: profile.website || '',
+      phone: typeof safeProfile.phone === 'string' ? safeProfile.phone : '',
+      bio: typeof safeProfile.bio === 'string' ? safeProfile.bio : '',
+      location: typeof safeProfile.location === 'string' ? safeProfile.location : '',
+      website: typeof safeProfile.website === 'string' ? safeProfile.website : '',
       socialLinks: {
-        twitter: profile.socialLinks?.twitter || '',
-        linkedin: profile.socialLinks?.linkedin || '',
-        github: profile.socialLinks?.github || '',
-        instagram: profile.socialLinks?.instagram || '',
+        twitter: safeProfile.socialLinks?.twitter || '',
+        linkedin: safeProfile.socialLinks?.linkedin || '',
+        github: safeProfile.socialLinks?.github || '',
+        instagram: safeProfile.socialLinks?.instagram || '',
       },
-      preferences: profile.preferences || {},
-      profileImageUrl: profile.profileImageUrl || '',
-      interests: Array.isArray(profile.interests) ? profile.interests : [],
-      readingPreferences: profile.readingPreferences || {},
+      preferences: safeProfile.preferences || {},
+      profileImageUrl: safeProfile.profileImageUrl || '',
+      interests: Array.isArray(safeProfile.interests) ? safeProfile.interests : [],
+      readingPreferences: safeProfile.readingPreferences || {},
       updatedAt: new Date()
     }
 
