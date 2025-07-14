@@ -51,6 +51,7 @@ const UsersManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -107,6 +108,31 @@ const UsersManagement = () => {
       toast.success(`User status updated to ${newStatus}`);
     } catch (error) {
       toast.error("Failed to update user status");
+    }
+  };
+
+  const handleDeleteUser = async (user: User) => {
+    if (!window.confirm(`Are you sure you want to delete ${user.name}'s account? This action cannot be undone.`)) return;
+    setDeletingUserId(user.id);
+    try {
+      const response = await fetch('/api/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: user.id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to delete user');
+      toast.success(data.message || 'User deleted successfully');
+      // Refresh user list
+      const res = await fetch('/api/users');
+      const usersData = await res.json();
+      if (usersData.success && usersData.users) {
+        setUsers(usersData.users);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete user');
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -264,9 +290,9 @@ const UsersManagement = () => {
                           View Articles
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteUser(user)} disabled={deletingUserId === user.id}>
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Account
+                          {deletingUserId === user.id ? 'Deleting...' : 'Delete Account'}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

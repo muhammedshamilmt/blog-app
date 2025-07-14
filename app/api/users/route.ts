@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
+import { ObjectId } from 'mongodb';
 
 export async function GET() {
   try {
@@ -39,5 +40,24 @@ export async function GET() {
     return NextResponse.json({ success: true, users: mapped });
   } catch (error) {
     return NextResponse.json({ success: false, message: 'Failed to fetch users', error: error?.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const client = await clientPromise;
+    const db = client.db('blog-app');
+    const { id, email } = await request.json();
+    if (!id && !email) {
+      return NextResponse.json({ success: false, message: 'User id or email is required' }, { status: 400 });
+    }
+    const filter: any = id ? { _id: new ObjectId(id) } : { email };
+    const result = await db.collection('users').deleteOne(filter);
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    return NextResponse.json({ success: false, message: 'Failed to delete user', error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
 } 
