@@ -1,52 +1,91 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users,
   FileText,
-  Eye,
+  Heart,
   TrendingUp,
-  TrendingDown,
-  ArrowUpRight,
-  ArrowDownRight,
-  Calendar,
-  Clock,
-  BarChart3,
-  LineChart,
-  PieChart
+  LineChart as LucideLineChart,
+  PieChart as LucidePieChart,
 } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  BarChart,
+  Bar,
+} from "recharts";
+
+const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088FE", "#00C49F"];
 
 const Analytics = () => {
-  // Mock data for analytics
-  const stats = [
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalUploads: 0,
+    totalViews: 0,
+    engagementRate: "0.0%",
+    totalLikes: 0,
+    totalWriters: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [likesByDay, setLikesByDay] = useState<{ date: string; count: number }[]>([]);
+  const [uploadsByDay, setUploadsByDay] = useState<{ date: string; count: number }[]>([]);
+  const [signupsByDay, setSignupsByDay] = useState<{ date: string; count: number }[]>([]);
+  const [uploadsByCategory, setUploadsByCategory] = useState<{ category: string; count: number }[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/stats")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setStats(data.data);
+          setLikesByDay(data.data.likesByDay || []);
+          setUploadsByDay(data.data.uploadsByDay || []);
+          setSignupsByDay(data.data.signupsByDay || []);
+          setUploadsByCategory(data.data.uploadsByCategory || []);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const statCards = [
     {
       title: "Total Users",
-      value: "2,543",
-      change: "+12.5%",
+      value: loading ? <span className="animate-pulse text-gray-400">...</span> : stats.totalUsers.toLocaleString(),
+      change: "",
       trend: "up",
-      icon: Users
+      icon: Users,
     },
     {
       title: "Total Articles",
-      value: "1,234",
-      change: "+8.2%",
+      value: loading ? <span className="animate-pulse text-gray-400">...</span> : stats.totalUploads.toLocaleString(),
+      change: "",
       trend: "up",
-      icon: FileText
+      icon: FileText,
     },
     {
-      title: "Total Views",
-      value: "45.2K",
-      change: "-2.4%",
-      trend: "down",
-      icon: Eye
+      title: "Total Likes",
+      value: loading ? <span className="animate-pulse text-gray-400">...</span> : stats.totalLikes.toLocaleString(),
+      change: "",
+      trend: "up",
+      icon: Heart,
     },
     {
-      title: "Engagement Rate",
-      value: "68.5%",
-      change: "+5.1%",
+      title: "Writers",
+      value: loading ? <span className="animate-pulse text-gray-400">...</span> : stats.totalWriters.toLocaleString(),
+      change: "",
       trend: "up",
-      icon: TrendingUp
-    }
+      icon: Users,
+    },
   ];
 
   const recentActivity = [
@@ -104,7 +143,7 @@ const Analytics = () => {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {statCards.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -114,17 +153,7 @@ const Analytics = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <div className="flex items-center text-xs">
-                {stat.trend === "up" ? (
-                  <ArrowUpRight className="h-4 w-4 text-green-500" />
-                ) : (
-                  <ArrowDownRight className="h-4 w-4 text-red-500" />
-                )}
-                <span className={stat.trend === "up" ? "text-green-500" : "text-red-500"}>
-                  {stat.change}
-                </span>
-                <span className="text-muted-foreground ml-1">from last month</span>
-              </div>
+              {/* Remove change/trend for now, or add if you want to compute them */}
             </CardContent>
           </Card>
         ))}
@@ -145,7 +174,7 @@ const Analytics = () => {
                     {activity.type === "New User" && <Users className="h-4 w-4 text-blue-500" />}
                     {activity.type === "New Article" && <FileText className="h-4 w-4 text-green-500" />}
                     {activity.type === "Writer Application" && <TrendingUp className="h-4 w-4 text-purple-500" />}
-                    {activity.type === "Content Update" && <Clock className="h-4 w-4 text-yellow-500" />}
+                    {activity.type === "Content Update" && <LucideLineChart className="h-4 w-4 text-yellow-500" />}
                   </div>
                   <div className="flex-1 space-y-1">
                     <p className="text-sm font-medium">{activity.description}</p>
@@ -188,26 +217,57 @@ const Analytics = () => {
 
       {/* Additional Charts */}
       <div className="grid gap-4 md:grid-cols-2">
+        {/* Activity Overview Line Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Traffic Overview</CardTitle>
+            <CardTitle>Activity Overview (Last 7 Days)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center">
-              <LineChart className="h-8 w-8 text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">Traffic chart will be displayed here</span>
+            <div className="h-[300px]">
+              {loading ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground animate-pulse">Loading chart...</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={likesByDay.map((d, i) => ({
+                    date: d.date,
+                    likes: d.count,
+                    uploads: uploadsByDay[i]?.count || 0,
+                    signups: signupsByDay[i]?.count || 0,
+                  }))} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="likes" stroke="#8884d8" name="Likes" />
+                    <Line type="monotone" dataKey="uploads" stroke="#82ca9d" name="Uploads" />
+                    <Line type="monotone" dataKey="signups" stroke="#ffc658" name="Signups" />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>
 
+        {/* Uploads by Category Bar Graph */}
         <Card>
           <CardHeader>
-            <CardTitle>Content Distribution</CardTitle>
+            <CardTitle>Uploads by Category</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center">
-              <PieChart className="h-8 w-8 text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">Content distribution chart will be displayed here</span>
+            <div className="h-[300px]">
+              {loading ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground animate-pulse">Loading chart...</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={uploadsByCategory} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                    <XAxis dataKey="category" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="count" fill="#8884d8" name="Uploads" />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>

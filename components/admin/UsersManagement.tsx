@@ -80,10 +80,24 @@ const UsersManagement = () => {
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
-      // Here you would make an API call to update the user's role
-      toast.success(`User role updated to ${newRole}`);
+      const user = users.find(u => u.id === userId);
+      if (!user) throw new Error('User not found');
+      const response = await fetch('/api/users/update-role', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: user.email, isWriter: newRole === 'writer' }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Failed to update user role');
+      toast.success(data.message || `User role updated to ${newRole}`);
+      // Refresh user list
+      const res = await fetch('/api/users');
+      const usersData = await res.json();
+      if (usersData.success && usersData.users) {
+        setUsers(usersData.users);
+      }
     } catch (error) {
-      toast.error("Failed to update user role");
+      toast.error(error instanceof Error ? error.message : 'Failed to update user role');
     }
   };
 

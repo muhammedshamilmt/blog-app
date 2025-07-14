@@ -173,7 +173,8 @@ export function Navigation() {
               >
                 Write
               </motion.a>
-              {user?.isWriter && (
+              {/* Only show Uploads link if user is a writer */}
+              {user && user.isWriter === true && (
                 <motion.a
                   href="/upload"
                   className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"

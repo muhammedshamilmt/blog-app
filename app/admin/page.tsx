@@ -93,15 +93,22 @@ const AdminPage = () => {
 
   const isActive = (tab: string) => activeTab === tab
 
-  const navItems = [
+  type NavItem = {
+    id: string;
+    label: string;
+    icon: any;
+    badge?: string | number;
+  };
+
+  const navItems: NavItem[] = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-    { id: "messages", label: "Messages", icon: MessageSquare, badge: stats.messages.toString() },
-    // { id: "writers", label: "Writer Requests", icon: UserCheck, badge: stats.writers.toString() },
-    { id: "uploads", label: "Content Uploads", icon: Upload, badge: stats.uploads.toString() },
+    { id: "messages", label: "Messages", icon: MessageSquare, badge: (typeof stats.messages === 'number' ? stats.messages : 0).toString() },
+    // { id: "writers", label: "Writer Requests", icon: UserCheck, badge: (typeof stats.writers === 'number' ? stats.writers : 0).toString() },
+    { id: "uploads", label: "Content Uploads", icon: Upload, badge: (typeof stats.uploads === 'number' ? stats.uploads : 0).toString() },
     { id: "users", label: "User Management", icon: Users },
     { id: "analytics", label: "Analytics", icon: TrendingUp },
     { id: "settings", label: "Settings", icon: Settings }
-  ]
+  ];
 
   const handleLogout = async () => {
     try {
@@ -212,7 +219,7 @@ const AdminPage = () => {
                   <span>{item.label}</span>
                   {item.badge && (
                     <span className="ml-auto bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
-                      {item.badge}
+                      {typeof item.badge === 'object' ? JSON.stringify(item.badge) : item.badge}
                     </span>
                   )}
                 </button>

@@ -1,38 +1,74 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Users, FileText, MessageSquare, TrendingUp, Eye, Clock, UserCheck } from "lucide-react";
+import { Users, FileText, Heart, User } from "lucide-react";
+
+type MostLikedArticle = {
+  _id: string;
+  titles: string[] | string;
+  likes: number;
+  author?: { name?: string; email?: string };
+  publishedAt?: string;
+  featuredImage?: string;
+};
 
 const Dashboard = () => {
-  const stats = [
+  const [stats, setStats] = useState<{
+    totalUsers: number;
+    totalUploads: number;
+    totalLikes: number;
+    totalWriters: number;
+    pendingWriterApplications: number;
+    pendingContentReviews: number;
+    unreadMessages: number;
+    mostLikedArticles: MostLikedArticle[];
+  }>({
+    totalUsers: 0,
+    totalUploads: 0,
+    totalLikes: 0,
+    totalWriters: 0,
+    pendingWriterApplications: 0,
+    pendingContentReviews: 0,
+    unreadMessages: 0,
+    mostLikedArticles: [],
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/stats")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setStats(data.data);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const statCards = [
     {
       label: "Total Users",
-      value: "2,543",
-      change: "+12%",
+      value: stats.totalUsers.toLocaleString(),
       icon: Users,
       color: "text-blue-600",
     },
     {
-      label: "Total Articles",
-      value: "1,234",
-      change: "+8%",
+      label: "Total Uploads",
+      value: stats.totalUploads.toLocaleString(),
       icon: FileText,
       color: "text-green-600",
     },
     {
-      label: "Total Views",
-      value: "45.2K",
-      change: "+23%",
-      icon: Eye,
+      label: "Total Likes",
+      value: stats.totalLikes.toLocaleString(),
+      icon: Heart,
       color: "text-purple-600",
     },
     {
-      label: "Writer Requests",
-      value: "15",
-      change: "+5",
-      icon: UserCheck,
+      label: "Writers",
+      value: stats.totalWriters.toLocaleString(),
+      icon: User,
       color: "text-coral-600",
     },
   ];
@@ -84,7 +120,7 @@ const Dashboard = () => {
     <div className="space-y-8">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
+        {statCards.map((stat) => (
           <Card key={stat.label} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -92,9 +128,8 @@ const Dashboard = () => {
                   <p className="text-sm font-medium text-muted-foreground">
                     {stat.label}
                   </p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-xs text-green-600 font-medium">
-                    {stat.change}
+                  <p className="text-2xl font-bold">
+                    {loading ? <span className="animate-pulse text-gray-400">...</span> : stat.value}
                   </p>
                 </div>
                 <stat.icon className={`h-8 w-8 ${stat.color}`} />
@@ -137,12 +172,12 @@ const Dashboard = () => {
                 </Badge>
                 {activity.views !== "0" && (
                   <p className="text-sm font-medium mt-1">
-                    <Eye className="h-4 w-4 inline mr-1" />
+                    {/* <Eye className="h-4 w-4 inline mr-1" /> */}
                     {activity.views} views
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  <Clock className="h-3 w-3 inline mr-1" />
+                  {/* <Clock className="h-3 w-3 inline mr-1" /> */}
                   {activity.date}
                 </p>
               </div>
@@ -161,24 +196,24 @@ const Dashboard = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <UserCheck className="h-5 w-5 text-coral-600" />
+                  {/* <UserCheck className="h-5 w-5 text-coral-600" /> */}
                   <span>Writer Applications</span>
                 </div>
-                <Badge variant="outline">5 pending</Badge>
+                <Badge variant="outline">{loading ? <span className="animate-pulse text-gray-400">...</span> : `${stats.pendingWriterApplications} pending`}</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-green-600" />
+                  {/* <FileText className="h-5 w-5 text-green-600" /> */}
                   <span>Content Reviews</span>
                 </div>
-                <Badge variant="outline">8 pending</Badge>
+                <Badge variant="outline">{loading ? <span className="animate-pulse text-gray-400">...</span> : `${stats.pendingContentReviews} pending`}</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <MessageSquare className="h-5 w-5 text-blue-600" />
+                  {/* <MessageSquare className="h-5 w-5 text-blue-600" /> */}
                   <span>Messages</span>
                 </div>
-                <Badge variant="outline">12 unread</Badge>
+                <Badge variant="outline">{loading ? <span className="animate-pulse text-gray-400">...</span> : `${stats.unreadMessages} unread`}</Badge>
               </div>
             </div>
           </CardContent>
@@ -190,36 +225,40 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Fashion Trends 2024</p>
-                  <p className="text-sm text-muted-foreground">Sarah Johnson</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">12.5K views</p>
-                  <p className="text-xs text-muted-foreground">2 days ago</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Sustainable Fashion Guide</p>
-                  <p className="text-sm text-muted-foreground">John Smith</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">10.2K views</p>
-                  <p className="text-xs text-muted-foreground">3 days ago</p>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Street Style Photography</p>
-                  <p className="text-sm text-muted-foreground">Michael Brown</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">8.7K views</p>
-                  <p className="text-xs text-muted-foreground">5 days ago</p>
-                </div>
-              </div>
+              {loading ? (
+                <div className="animate-pulse text-gray-400">Loading...</div>
+              ) : stats.mostLikedArticles.length === 0 ? (
+                <div className="text-muted-foreground">No articles found.</div>
+              ) : (
+                stats.mostLikedArticles.map((article, idx) => {
+                  let displayTitle = 'Untitled';
+                  if (Array.isArray(article.titles)) {
+                    const t = article.titles[0];
+                    if (typeof t === 'string') displayTitle = t;
+                    else if (t && typeof t === 'object' && 'value' in t && typeof (t as any).value === 'string') displayTitle = (t as any).value;
+                  } else if (typeof article.titles === 'string') {
+                    displayTitle = article.titles;
+                  } else if (article.titles && typeof article.titles === 'object' && 'value' in article.titles && typeof (article.titles as any).value === 'string') {
+                    displayTitle = (article.titles as any).value;
+                  }
+                  return (
+                    <div key={article._id} className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{displayTitle}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {article.author?.name || article.author?.email || 'Unknown Author'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">{article.likes?.toLocaleString?.() ?? 0} likes</p>
+                        <p className="text-xs text-muted-foreground">
+                          {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : ''}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </CardContent>
         </Card>
