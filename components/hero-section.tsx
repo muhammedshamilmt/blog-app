@@ -33,26 +33,26 @@ export function HeroSection() {
 
   const floatingCards = [
     {
-      title: "The Future of Web Design",
-      author: "Sarah Chen",
+      title: "Understanding the Qur'an in Daily Life",
+      author: "Imam Yusuf",
       readTime: "5 min read",
-      category: "Design",
-      gradient: "from-navy-500 to-navy-600",
+      category: "Islamic Essentials",
+      gradient: "from-green-500 to-green-600",
     },
     {
-      title: "Building Scalable React Apps",
-      author: "Alex Rodriguez",
-      readTime: "8 min read", 
-      category: "Development",
-      gradient: "from-coral-500 to-coral-600",
+      title: "Islam & Modern Technology",
+      author: "Dr. Amina Rahman",
+      readTime: "8 min read",
+      category: "Scientific Reflections",
+      gradient: "from-blue-500 to-blue-600",
     },
     {
-      title: "UX Psychology Principles",
-      author: "Maya Patel",
+      title: "Prophetic Wisdom for the Heart",
+      author: "Ustadha Fatima Kareem",
       readTime: "6 min read",
-      category: "Psychology",
-      gradient: "from-navy-600 to-coral-500",
-    },
+      category: "Lifestyle",
+      gradient: "from-yellow-600 to-orange-500",
+    }
   ]
 
   return (

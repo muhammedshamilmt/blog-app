@@ -10,20 +10,28 @@ import { Search, Mail, Clock, CheckCircle, XCircle, UserCheck } from "lucide-rea
 import { toast } from "sonner";
 
 interface Writer {
-  _id: string;
-  firstName: string;
-  lastName: string;
   email: string;
-  isWriter: boolean;
-  writerStatus: string;
+  name: string;
+  bio?: string;
+  avatar?: string;
+  initials?: string;
+  specialty?: string;
+  articles?: number;
+  likes?: number;
+  featured?: boolean;
   profile?: {
     title?: string;
     category?: string;
     pitch?: string;
     experience?: string;
     portfolio?: string;
+    bio?: string;
+    profileImageUrl?: string;
+    specialty?: string;
+    articlesPublished?: number;
+    likes?: number;
+    status?: string;
   };
-  createdAt: string;
 }
 
 const WritersManagement = () => {
@@ -44,22 +52,23 @@ const WritersManagement = () => {
         throw new Error(data.error || 'Failed to fetch writers');
       }
 
-      setWriters(data.writers);
+      setWriters(Array.isArray(data.data?.writers) ? data.data.writers : []);
     } catch (error) {
       console.error('Error fetching writers:', error);
       toast.error('Failed to fetch writers');
+      setWriters([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const filteredWriters = writers.filter(writer =>
-    `${writer.firstName} ${writer.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    writer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    writer.profile?.category?.toLowerCase().includes(searchQuery.toLowerCase())
+    (writer.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (writer.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (writer.profile?.category || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleApprove = async (id: string) => {
+  const handleApprove = async (email: string) => {
     try {
       const response = await fetch('/api/writers', {
         method: 'PATCH',
@@ -67,19 +76,16 @@ const WritersManagement = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id,
-          status: 'approved'
+          email,
+          status: 'approved',
         }),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.error || 'Failed to approve writer');
       }
-
-      toast.success("Writer approved successfully");
-      fetchWriters(); // Refresh the list
+      toast.success('Writer approved successfully');
+      fetchWriters();
     } catch (error) {
       console.error('Error approving writer:', error);
       toast.error('Failed to approve writer');
@@ -113,12 +119,38 @@ const WritersManagement = () => {
     }
   };
 
+  const handleDeactivate = async (email: string) => {
+    try {
+      const response = await fetch('/api/writers', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          status: 'deactivated',
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to deactivate writer');
+      }
+      toast.success('Writer deactivated successfully');
+      fetchWriters();
+    } catch (error) {
+      console.error('Error deactivating writer:', error);
+      toast.error('Failed to deactivate writer');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "approved":
         return "bg-green-100 text-green-800";
       case "rejected":
         return "bg-red-100 text-red-800";
+      case "deactivated":
+        return "bg-gray-200 text-gray-700";
       default:
         return "bg-yellow-100 text-yellow-800";
     }
@@ -165,30 +197,30 @@ const WritersManagement = () => {
                 No writers found
               </div>
             ) : (
-              filteredWriters.map((writer) => (
+              filteredWriters.map((writer, idx) => (
                 <div
-                  key={writer._id}
+                  key={writer.email || idx}
                   className="flex items-start space-x-4 p-4 border rounded-lg"
                 >
                   <Avatar>
-                    <AvatarImage src={`https://avatar.vercel.sh/${writer.email}`} />
+                    <AvatarImage src={writer.avatar || `https://avatar.vercel.sh/${writer.email}`}/>
                     <AvatarFallback>
-                      {writer.firstName[0]}{writer.lastName[0]}
+                      {(writer.initials || (writer.name && writer.name.split(' ').map(n => n[0]).join('')) || 'U').toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-medium">
-                          {writer.firstName} {writer.lastName}
+                          {writer.name || 'Unknown'}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          {writer.profile?.title || 'Writer'}
+                          {writer.profile?.title || writer.specialty || 'Writer'}
                         </p>
                       </div>
-                      <Badge className={getStatusColor(writer.writerStatus || 'pending')}>
-                        {(writer.writerStatus || 'pending').charAt(0).toUpperCase() + 
-                         (writer.writerStatus || 'pending').slice(1)}
+                      <Badge className={getStatusColor(writer.profile?.status || 'pending')}>
+                        {(writer.profile?.status || 'pending').charAt(0).toUpperCase() + 
+                         (writer.profile?.status || 'pending').slice(1)}
                       </Badge>
                     </div>
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
@@ -196,35 +228,31 @@ const WritersManagement = () => {
                         <Mail className="h-4 w-4 mr-1" />
                         {writer.email}
                       </div>
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {new Date(writer.createdAt).toLocaleDateString()}
-                      </div>
                     </div>
                     {writer.profile?.pitch && (
                       <p className="text-sm mt-2">{writer.profile.pitch}</p>
                     )}
                     <div className="flex items-center space-x-2 mt-2">
-                      {writer.writerStatus !== 'approved' && (
+                      {writer.profile?.status !== 'approved' && (
                         <Button
                           variant="outline"
                           size="sm"
                           className="text-green-600 hover:text-green-700"
-                          onClick={() => handleApprove(writer._id)}
+                          onClick={() => handleApprove(writer.email)}
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve
+                          Approve as Writer
                         </Button>
                       )}
-                      {writer.writerStatus !== 'rejected' && (
+                      {writer.profile?.status === 'approved' && (
                         <Button
                           variant="outline"
                           size="sm"
                           className="text-red-600 hover:text-red-700"
-                          onClick={() => handleReject(writer._id)}
+                          onClick={() => handleDeactivate(writer.email)}
                         >
                           <XCircle className="h-4 w-4 mr-1" />
-                          Reject
+                          Deactivate Writer
                         </Button>
                       )}
                       <Button

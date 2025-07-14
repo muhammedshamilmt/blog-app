@@ -3,7 +3,7 @@ import clientPromise from '@/lib/mongodb'
 
 export async function POST(request: Request) {
   try {
-    const { email, profile } = await request.json()
+    const { email, profile, firstName, lastName, isWriter } = await request.json()
     if (!email) {
       return NextResponse.json({ success: false, message: 'Email is required' }, { status: 400 })
     }
@@ -38,14 +38,16 @@ export async function POST(request: Request) {
       updatedAt: new Date()
     }
 
-    // Update user by email, set the profile object
+    // Build the update object
+    const updateObj: any = { profile: profileUpdate }
+    if (firstName) updateObj.firstName = firstName
+    if (lastName) updateObj.lastName = lastName
+    if (typeof isWriter === 'boolean') updateObj.isWriter = isWriter
+
+    // Update user by email, set the profile object and root fields
     const result = await db.collection('users').updateOne(
       { email },
-      { 
-        $set: { 
-          profile: profileUpdate
-        } 
-      },
+      { $set: updateObj },
       { upsert: true }
     )
 
@@ -56,19 +58,22 @@ export async function POST(request: Request) {
       )
     }
 
-    return NextResponse.json({ 
+    // Return the updated user (excluding password)
+    const updatedUser = await db.collection('users').findOne({ email }, { projection: { password: 0 } })
+
+    return NextResponse.json({
       success: true,
       message: 'Profile updated successfully',
-      data: profileUpdate
+      data: updatedUser
     })
   } catch (error) {
     console.error('Error updating profile:', error)
     return NextResponse.json(
-      { 
-        success: false, 
-        message: 'Failed to update profile', 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }, 
+      {
+        success: false,
+        message: 'Failed to update profile',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

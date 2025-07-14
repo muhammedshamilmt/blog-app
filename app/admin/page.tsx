@@ -96,7 +96,7 @@ const AdminPage = () => {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "messages", label: "Messages", icon: MessageSquare, badge: stats.messages.toString() },
-    { id: "writers", label: "Writer Requests", icon: UserCheck, badge: stats.writers.toString() },
+    // { id: "writers", label: "Writer Requests", icon: UserCheck, badge: stats.writers.toString() },
     { id: "uploads", label: "Content Uploads", icon: Upload, badge: stats.uploads.toString() },
     { id: "users", label: "User Management", icon: Users },
     { id: "analytics", label: "Analytics", icon: TrendingUp },

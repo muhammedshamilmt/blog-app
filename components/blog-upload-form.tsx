@@ -249,16 +249,11 @@ export function BlogUploadForm() {
   }
 
   const categories = [
-    "Technology",
-    "Design", 
-    "Business",
-    "Development",
-    "Marketing",
+    "Islamic Essentials", 
     "Lifestyle",
     "Innovation",
-    "Leadership",
-    "Health",
-    "Education"
+    "Literature",
+    "Scientific Reflections",
   ]
 
   // Toggle between form and preview mode

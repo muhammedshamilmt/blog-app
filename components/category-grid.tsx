@@ -3,41 +3,17 @@
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Code, Palette, Briefcase, Smartphone, Heart, TrendingUp, Lightbulb, Globe } from "lucide-react"
+import { BookOpen, Heart, Lightbulb, Book, FlaskConical } from "lucide-react"
 
 export function CategoryGrid() {
   const categories = [
     {
-      name: "Technology",
-      description: "Latest trends in tech, AI, and digital innovation",
-      icon: Code,
+      name: "Islamic Essentials",
+      description: "Core teachings, practices, and guidance in Islam",
+      icon: BookOpen,
       count: 234,
-      gradient: "from-blue-500 to-blue-600",
-      color: "text-blue-600"
-    },
-    {
-      name: "Design",
-      description: "UI/UX, visual design, and creative processes",
-      icon: Palette,
-      count: 156,
-      gradient: "from-purple-500 to-purple-600",
-      color: "text-purple-600"
-    },
-    {
-      name: "Business",
-      description: "Entrepreneurship, strategy, and leadership insights",
-      icon: Briefcase,
-      count: 189,
       gradient: "from-green-500 to-green-600",
       color: "text-green-600"
-    },
-    {
-      name: "Mobile",
-      description: "Mobile development, apps, and user experience",
-      icon: Smartphone,
-      count: 98,
-      gradient: "from-orange-500 to-orange-600",
-      color: "text-orange-600"
     },
     {
       name: "Lifestyle",
@@ -48,14 +24,6 @@ export function CategoryGrid() {
       color: "text-pink-600"
     },
     {
-      name: "Marketing",
-      description: "Digital marketing, growth, and brand building",
-      icon: TrendingUp,
-      count: 112,
-      gradient: "from-indigo-500 to-indigo-600",
-      color: "text-indigo-600"
-    },
-    {
       name: "Innovation",
       description: "Emerging technologies and future trends",
       icon: Lightbulb,
@@ -64,12 +32,20 @@ export function CategoryGrid() {
       color: "text-yellow-600"
     },
     {
-      name: "Global",
-      description: "International perspectives and cultural insights",
-      icon: Globe,
-      count: 76,
-      gradient: "from-teal-500 to-teal-600",
-      color: "text-teal-600"
+      name: "Literature",
+      description: "Poetry, prose, and literary analysis",
+      icon: Book,
+      count: 120,
+      gradient: "from-purple-500 to-purple-600",
+      color: "text-purple-600"
+    },
+    {
+      name: "Scientific Reflections",
+      description: "Science, discoveries, and thoughtful insights",
+      icon: FlaskConical,
+      count: 98,
+      gradient: "from-blue-500 to-blue-600",
+      color: "text-blue-600"
     },
   ]
 

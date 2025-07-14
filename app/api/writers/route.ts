@@ -49,46 +49,54 @@ export async function GET() {
 
 export async function PATCH(request: Request) {
   try {
-    const { id, status } = await request.json()
-    
-    if (!id || !status) {
+    const { id, email, status } = await request.json();
+
+    if ((!id && !email) || !status) {
       return NextResponse.json(
         { success: false, error: 'Missing required fields' },
         { status: 400 }
-      )
+      );
     }
 
-    const { db } = await connectToDatabase()
-    
+    const { db } = await connectToDatabase();
+
     if (!db) {
-      throw new Error('Database connection failed')
+      throw new Error('Database connection failed');
+    }
+
+    // Build the filter based on id or email
+    let filter: any = {};
+    if (id) {
+      filter._id = new ObjectId(id);
+    } else if (email) {
+      filter.email = email;
     }
 
     // Update user's writer status
     const result = await db.collection('users').updateOne(
-      { _id: new ObjectId(id) },
+      filter,
       { 
         $set: { 
           writerStatus: status,
-          isWriter: status === 'approved', // Set isWriter based on approval status
+          isWriter: status === 'approved',
           updatedAt: new Date()
         } 
       }
-    )
+    );
 
     if (result.matchedCount === 0) {
       return NextResponse.json(
         { success: false, error: 'Writer not found' },
         { status: 404 }
-      )
+      );
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error updating writer status:', error)
+    console.error('Error updating writer status:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update writer status' },
       { status: 500 }
-    )
+    );
   }
 } 

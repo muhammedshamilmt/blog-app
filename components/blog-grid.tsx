@@ -45,7 +45,12 @@ export function BlogGrid() {
   const [error, setError] = useState<string | null>(null)
 
   const categories = [
-    "All", "Design", "Development", "Business", "Technology", "Lifestyle", "Opinion"
+    "All",
+    "Islamic Essentials", 
+    "Lifestyle",
+    "Innovation",
+    "Literature",
+    "Scientific Reflections",
   ]
 
   const fetchBlogs = async (category: string = selectedCategory, pageNum: number = 1) => {

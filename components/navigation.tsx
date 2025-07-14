@@ -21,7 +21,15 @@ import {
   X, 
   User, 
   LogOut, 
-  LayoutDashboard 
+  LayoutDashboard,
+  Home as HomeIcon,
+  BookOpen,
+  PenSquare,
+  UploadCloud,
+  Layers,
+  Mail as MailIcon,
+  Users as UsersIcon,
+  Info as InfoIcon
 } from "lucide-react"
 
 interface ProfileData {
@@ -88,13 +96,14 @@ export function Navigation() {
   }
 
   const navItems = [
-    { name: "Home", href: "/" },
-    { name: "Articles", href: "/articles" },
-    { name: "Categories", href: "/categories" },
-    { name: "Write", href: "/write" },
-    { name: "Uploads", href: "/upload" },
-    { name: "Contact", href: "/contact" },
-    { name: "Writers", href: "/writers" },
+    { name: "Home", href: "/", icon: <HomeIcon className="h-4 w-4 mr-2" /> },
+    { name: "About", href: "/about", icon: <InfoIcon className="h-4 w-4 mr-2" /> },
+    { name: "Articles", href: "/articles", icon: <BookOpen className="h-4 w-4 mr-2" /> },
+    { name: "Write", href: "/write", icon: <PenSquare className="h-4 w-4 mr-2" /> },
+    { name: "Uploads", href: "/upload", icon: <UploadCloud className="h-4 w-4 mr-2" /> },
+    { name: "Categories", href: "/categories", icon: <Layers className="h-4 w-4 mr-2" /> },
+    { name: "Contact", href: "/contact", icon: <MailIcon className="h-4 w-4 mr-2" /> },
+    { name: "Writers", href: "/writers", icon: <UsersIcon className="h-4 w-4 mr-2" /> },
   ]
 
   return (
@@ -133,6 +142,16 @@ export function Navigation() {
                 transition={{ delay: 0.1 }}
               >
                 Home
+              </motion.a>
+              <motion.a
+                href="/about"
+                className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
+                whileHover={{ y: -2 }}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                About
               </motion.a>
               <motion.a
                 href="/articles"
@@ -334,6 +353,7 @@ export function Navigation() {
                     className="flex items-center space-x-3 text-muted-foreground hover:text-foreground transition-colors p-2 rounded-md hover:bg-muted"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
+                    {item.icon}
                     <span className="font-medium">{item.name}</span>
                   </a>
                 ))}

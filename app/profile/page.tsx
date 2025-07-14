@@ -44,6 +44,8 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [profile, setProfile] = useState({
     name: user && user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : '',
+    firstName: user && user.firstName ? user.firstName : '',
+    lastName: user && user.lastName ? user.lastName : '',
     email: user && user.email ? user.email : '',
     phone: '',
     location: '',
@@ -90,6 +92,8 @@ export default function ProfilePage() {
           const userData = data.data
           setProfile({
             name: userData.firstName && userData.lastName ? `${userData.firstName} ${userData.lastName}` : '',
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
             email: userData.email || '',
             phone: userData.profile?.phone || '',
             location: userData.profile?.location || '',
@@ -152,6 +156,9 @@ export default function ProfilePage() {
     // Build the correct structure
     const payload = {
       email: user.email,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      isWriter: typeof profile.isWriter === 'boolean' ? profile.isWriter : undefined,
       profile: {
         phone: profile.phone,
         bio: profile.bio,
@@ -342,11 +349,19 @@ export default function ProfilePage() {
                   {isEditing ? (
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
+                        <Label htmlFor="firstName">First Name</Label>
                         <Input
-                          id="name"
-                          value={profile.name}
-                          onChange={(e) => setProfile({...profile, name: e.target.value})}
+                          id="firstName"
+                          value={profile.firstName}
+                          onChange={(e) => setProfile({...profile, firstName: e.target.value, name: `${e.target.value} ${profile.lastName}`})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input
+                          id="lastName"
+                          value={profile.lastName}
+                          onChange={(e) => setProfile({...profile, lastName: e.target.value, name: `${profile.firstName} ${e.target.value}`})}
                         />
                       </div>
                       

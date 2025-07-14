@@ -15,7 +15,7 @@ export default function WritePage() {
       <Navigation />
       <WriteHero />
       <WriterGuidelines />
-      <SubmissionForm />
+      {/* <SubmissionForm /> */}
       <Footer />
       <FloatingActions />
     </main>
