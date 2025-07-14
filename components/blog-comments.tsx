@@ -48,6 +48,13 @@ export function BlogComments({ id }: BlogCommentsProps) {
     fetchComments();
   }, [id]);
 
+  const getUserName = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('userName') || 'Anonymous';
+    }
+    return 'Anonymous';
+  };
+
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newComment.trim()) {
@@ -55,7 +62,7 @@ export function BlogComments({ id }: BlogCommentsProps) {
       return
     }
 
-    const authorName = 'Anonymous';
+    const authorName = getUserName();
 
     setIsSubmitting(true)
     try {
@@ -132,7 +139,7 @@ export function BlogComments({ id }: BlogCommentsProps) {
       toast.error("Please write a reply before submitting");
       return;
     }
-    const authorName = 'Anonymous';
+    const authorName = getUserName();
     try {
       const res = await fetch('/api/comments', {
         method: 'POST',
