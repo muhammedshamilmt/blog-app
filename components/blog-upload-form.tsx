@@ -611,14 +611,24 @@ Share your knowledge, insights, and stories!"
                       />
                       {typeof formData.featuredImage === "string" && formData.featuredImage ? (
                         <div className="space-y-2">
-                          <Image
-                            urlEndpoint={IMAGEKIT_URL_ENDPOINT}
-                            src={formData.featuredImage.replace(IMAGEKIT_URL_ENDPOINT, "")}
-                            width={300}
-                            height={200}
-                            alt="Featured"
-                            className="mx-auto rounded-lg"
-                          />
+                          {formData.featuredImage.startsWith(IMAGEKIT_URL_ENDPOINT) ? (
+                            <Image
+                              urlEndpoint={IMAGEKIT_URL_ENDPOINT}
+                              src={formData.featuredImage.replace(IMAGEKIT_URL_ENDPOINT, "")}
+                              width={300}
+                              height={200}
+                              alt="Featured"
+                              className="mx-auto rounded-lg"
+                            />
+                          ) : (
+                            <img
+                              src={formData.featuredImage}
+                              width={300}
+                              height={200}
+                              alt="Featured"
+                              className="mx-auto rounded-lg"
+                            />
+                          )}
                           <p className="text-sm font-medium">
                             {formData.featuredImage.split("/").pop()}
                           </p>

@@ -34,4 +34,26 @@ export async function POST(request: Request) {
   } catch (error) {
     return NextResponse.json({ success: false, message: 'Failed to upload to ImageKit', error: error instanceof Error ? error.message : String(error) }, { status: 500 });
   }
+}
+
+export async function GET() {
+  const publicKey = process.env.IMAGEKIT_PUBLIC_KEY;
+  const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
+  const urlEndpoint = process.env.IMAGEKIT_URL_ENDPOINT;
+  if (!publicKey || !privateKey || !urlEndpoint) {
+    return NextResponse.json({ error: 'ImageKit environment variables not set' }, { status: 500 });
+  }
+
+  const imagekit = new ImageKit({
+    publicKey,
+    privateKey,
+    urlEndpoint,
+  });
+
+  const authenticationParameters = imagekit.getAuthenticationParameters();
+  return NextResponse.json({
+    ...authenticationParameters,
+    publicKey,
+    urlEndpoint,
+  });
 } 
