@@ -5,58 +5,34 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Users, Twitter, Linkedin, Github, Mail } from "lucide-react"
+import { Users, Instagram, Youtube, Facebook } from "lucide-react"
 
 export function TeamSection() {
   const team = [
     {
-      name: "Sarah Chen",
+      name: "SA'ADA",
       role: "Founder & CEO",
-      bio: "Former tech journalist with 10+ years of experience in digital media and content strategy.",
-      avatar: "",
+      bio: "Students assosiation for akkode DAWA ACADEMY run by akkode islamic center.",
+      imageUrl: "/saada.png",
       initials: "SC",
       social: {
-        twitter: "#",
-        linkedin: "#",
-        email: "sarah@editorial.com"
+        instagram: "https://instagram.com/saada_dawa",
+        youtube: "https://youtube.com/saadaacademy",
+        facebook: "https://facebook.com/saadaacademy"
       }
     },
     {
-      name: "Marcus Rodriguez",
+      name: "USBA",
       role: "Head of Product",
-      bio: "Product designer turned entrepreneur with a passion for creating intuitive user experiences.",
-      avatar: "",
+      bio: "Students assosiation of third bacth of islamic DAWA ACADEMY run by SA'ADA.",
+      imageUrl: "/usba.png",
       initials: "MR",
       social: {
-        twitter: "#",
-        linkedin: "#",
-        github: "#"
+        instagram: "https://instagram.com/usba_dawa",
+        youtube: "https://youtube.com/usbaacademy",
+        facebook: "https://facebook.com/usbaacademy"
       }
-    },
-    {
-      name: "Elena Volkov",
-      role: "Head of Community",
-      bio: "Community builder and former content creator who understands what writers need to succeed.",
-      avatar: "",
-      initials: "EV",
-      social: {
-        twitter: "#",
-        linkedin: "#",
-        email: "elena@editorial.com"
-      }
-    },
-    {
-      name: "David Kim",
-      role: "CTO",
-      bio: "Full-stack engineer with expertise in scalable platforms and developer experience.",
-      avatar: "",
-      initials: "DK",
-      social: {
-        github: "#",
-        linkedin: "#",
-        email: "david@editorial.com"
-      }
-    },
+    }
   ]
 
   return (
@@ -95,7 +71,7 @@ export function TeamSection() {
                 <CardContent className="p-8">
                   <div className="flex items-start space-x-6">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={member.avatar} alt={member.name} />
+                      <AvatarImage src={member.imageUrl} alt={member.name} />
                       <AvatarFallback className="bg-navy-500 text-white text-lg">
                         {member.initials}
                       </AvatarFallback>
@@ -111,24 +87,25 @@ export function TeamSection() {
                       </p>
                       
                       <div className="flex items-center space-x-3">
-                        {member.social.twitter && (
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                            <Twitter className="h-4 w-4" />
+                        {member.social.instagram && (
+                          <Button asChild size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <a href={member.social.instagram} target="_blank" rel="noopener noreferrer">
+                              <Instagram className="h-4 w-4" />
+                            </a>
                           </Button>
                         )}
-                        {member.social.linkedin && (
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                            <Linkedin className="h-4 w-4" />
+                        {member.social.youtube && (
+                          <Button asChild size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <a href={member.social.youtube} target="_blank" rel="noopener noreferrer">
+                              <Youtube className="h-4 w-4" />
+                            </a>
                           </Button>
                         )}
-                        {member.social.github && (
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                            <Github className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {member.social.email && (
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                            <Mail className="h-4 w-4" />
+                        {member.social.facebook && (
+                          <Button asChild size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <a href={member.social.facebook} target="_blank" rel="noopener noreferrer">
+                              <Facebook className="h-4 w-4" />
+                            </a>
                           </Button>
                         )}
                       </div>

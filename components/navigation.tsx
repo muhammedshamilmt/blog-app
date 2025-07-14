@@ -242,17 +242,7 @@ export function Navigation() {
 
             {/* Theme Toggle & User Menu */}
             <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                className="h-9 w-9"
-              >
-                <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span className="sr-only">Toggle theme</span>
-              </Button>
-              
+              {/* User menu or avatar */}
               {user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -310,20 +300,31 @@ export function Navigation() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="md:hidden h-9 w-9"
-                  onClick={toggleMobileMenu}
-                >
-                  {isMobileMenuOpen ? (
-                    <X className="h-4 w-4" />
-                  ) : (
-                    <Menu className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
+              ) : null}
+              {/* Mobile menu open button (always next to avatar/user menu) */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden h-9 w-9"
+                onClick={toggleMobileMenu}
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-4 w-4" />
+                ) : (
+                  <Menu className="h-4 w-4" />
+                )}
+              </Button>
+              {/* Theme toggle (only on desktop) */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="h-9 w-9 hidden md:inline-flex"
+              >
+                <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                <span className="sr-only">Toggle theme</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -391,7 +392,6 @@ export function Navigation() {
                   </>
                 )}
                 <div className="flex items-center space-x-3 p-2 rounded-md hover:bg-muted">
-                  <span className="font-medium">Theme</span>
                   <Button
                     variant="ghost"
                     size="icon"
