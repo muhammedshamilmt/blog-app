@@ -126,8 +126,8 @@ export function BlogUploadForm() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5000000) {
-        toast.error("Image must be smaller than 5MB");
+      if (file.size > 3 * 1024 * 1024) {
+        toast.error("Image must be smaller than 3MB");
         return;
       }
       setUploadProgress(0);
@@ -261,21 +261,6 @@ export function BlogUploadForm() {
     "Scientific Reflections",
   ]
 
-  // If user is not a writer, show a themed message and do not show the form
-  if (!user?.isWriter) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center bg-gradient-to-br from-editorial-bg via-background to-muted/10 rounded-xl shadow-lg p-8 mt-12">
-        <div className="flex flex-col items-center space-y-3">
-          <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-coral-500 mb-2"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 20.5C6.201 20.5 1.5 15.799 1.5 10S6.201-.5 12-.5s10.5 4.701 10.5 10.5-4.701 10.5-10.5 10.5z" /></svg>
-          <h2 className="text-2xl font-bold text-navy-900 dark:text-white">Writer Application Pending</h2>
-          <p className="text-muted-foreground text-center max-w-md">
-            Thank you for your interest in contributing! Your application to become a writer is under review.<br />
-            <span className="text-coral-600 font-semibold">Please wait for your acceptance as a writer.</span>
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   // Toggle between form and preview mode
   if (previewMode) {

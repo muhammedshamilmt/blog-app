@@ -125,7 +125,27 @@ const AdminPage = () => {
   }
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 mb-4 flex items-center justify-center">
+            <div className="w-16 h-16 animate-spin-slow rounded-full border-4 border-coral-200 border-t-coral-500 flex items-center justify-center bg-white shadow-lg">
+              <img src="/favicon.ico" alt="Loading..." className="w-10 h-10" style={{ animation: 'none' }} />
+            </div>
+          </div>
+          <span className="text-lg text-muted-foreground font-semibold">Loading Admin Dashboard...</span>
+        </div>
+        <style jsx>{`
+          @keyframes spin-slow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          .animate-spin-slow {
+            animation: spin-slow 1.2s linear infinite;
+          }
+        `}</style>
+      </div>
+    );
   }
 
   if (!isAdmin) {
