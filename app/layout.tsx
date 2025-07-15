@@ -6,7 +6,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { UserProvider } from '@/contexts/user-context'
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/contexts/AuthContext";
-import Head from 'next/head'
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -30,7 +29,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     images: [
-      "https://res.cloudinary.com/dfadqkxbo/image/upload/v1752579983/favicon_pq0ern.png"
+      "https://res.cloudinary.com/dfadqkxbo/image/upload/c_thumb,w_200,g_face/v1744100903/logo_rx1gog.jpg"
     ]
   }
 };
@@ -42,8 +41,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <Head>
-      </Head>
       <body className={`${inter.variable} font-inter antialiased`}>
         <AuthProvider>
           <UserProvider>
