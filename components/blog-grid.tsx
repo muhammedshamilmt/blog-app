@@ -280,7 +280,7 @@ export function BlogGrid() {
                       <img
                         src={mostLikedBlog.featuredImage}
                         alt={mostLikedBlog.seoTitle || mostLikedBlog.titles?.[0]?.value || 'Featured'}
-                        className="object-cover w-full h-full min-h-[320px] max-h-[500px]"
+                        className="object-cover w-full h-[320px] md:h-[400px] lg:h-[500px] max-h-[500px] rounded-l-2xl"
                       />
                     ) : (
                       <div className="flex items-center justify-center w-full h-full min-h-[320px] max-h-[400px] bg-muted">
