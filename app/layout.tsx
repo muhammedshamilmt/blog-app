@@ -14,7 +14,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Editorial - Modern Blog Platform",
+  title: "sulaiman",
   description: "A beautiful, accessible editorial platform for high-quality content",
   keywords: ["blog", "editorial", "writing", "content", "modern"],
   authors: [{ name: "Editorial Team" }],
@@ -23,6 +23,9 @@ export const metadata: Metadata = {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
     apple: '/favicon.ico',
+  },
+  verification: {
+    google: "Ze2aFW-vR3x1r3GPnpbNKpvC_6GDSnO4l3MzolqzzWs",
   },
 };
 
