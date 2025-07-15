@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { UserProvider } from '@/contexts/user-context'
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/contexts/AuthContext";
+import Head from 'next/head'
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -36,7 +37,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <meta name="google-site-verification" content="Ze2aFW-vR3x1r3GPnpbNKpvC_6GDSnO4l3MzolqzzWs" />
+      <Head>
+        <meta name="google-site-verification" content="Ze2aFW-vR3x1r3GPnpbNKpvC_6GDSnO4l3MzolqzzWs" />
+        <meta property="og:image" content="/favicon.ico" />
+      </Head>
       <body className={`${inter.variable} font-inter antialiased`}>
         <AuthProvider>
           <UserProvider>
