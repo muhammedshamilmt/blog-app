@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { List, Quote, Share2, Twitter, Linkedin, Facebook, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { useRef } from "react"
 
 interface BlogContentProps {
   id: string
@@ -45,6 +46,7 @@ export default function BlogContent({ id }: BlogContentProps) {
   const [contentData, setContentData] = useState<BlogContentData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const headingRefs = useRef<(HTMLHeadingElement | null)[]>([]);
 
   useEffect(() => {
     const fetchContent = async () => {
@@ -96,6 +98,36 @@ export default function BlogContent({ id }: BlogContentProps) {
         break
     }
   }
+
+  // Scroll to heading when TOC is clicked
+  const handleTocClick = (index: number) => {
+    setActiveSection(index);
+    const ref = headingRefs.current[index];
+    if (ref) {
+      ref.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  // Update activeSection on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!contentData) return;
+      const headings = headingRefs.current;
+      let current = 0;
+      for (let i = 0; i < headings.length; i++) {
+        const ref = headings[i];
+        if (ref) {
+          const rect = ref.getBoundingClientRect();
+          if (rect.top <= 120) {
+            current = i;
+          }
+        }
+      }
+      setActiveSection(current);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [contentData]);
 
   if (isLoading) {
     return (
@@ -152,7 +184,7 @@ export default function BlogContent({ id }: BlogContentProps) {
                             ? 'bg-coral-50 text-coral-600 font-medium'
                             : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                         }`}
-                        onClick={() => setActiveSection(index)}
+                        onClick={() => handleTocClick(index)}
                       >
                         {item}
                       </button>
@@ -222,6 +254,11 @@ export default function BlogContent({ id }: BlogContentProps) {
                   
                   {block.type === 'heading' && (
                     <h2 
+                      ref={el => {
+                        // Only assign refs to headings that are in the TOC order
+                        const tocIndex = contentData.tableOfContents.findIndex(t => t === block.text);
+                        if (tocIndex !== -1) headingRefs.current[tocIndex] = el;
+                      }}
                       className={`font-bold text-foreground mt-12 mb-6 ${
                         block.level === 1 ? 'text-4xl' :
                         block.level === 2 ? 'text-3xl' :

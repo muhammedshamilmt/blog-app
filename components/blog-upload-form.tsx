@@ -146,6 +146,7 @@ export function BlogUploadForm() {
           token,
           signature,
           publicKey,
+          folder: "/blogapp/blogimages",
           onProgress: (event) => {
             setUploadProgress((event.loaded / event.total) * 100);
           },
