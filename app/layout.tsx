@@ -28,6 +28,11 @@ export const metadata: Metadata = {
   verification: {
     google: "Ze2aFW-vR3x1r3GPnpbNKpvC_6GDSnO4l3MzolqzzWs",
   },
+  openGraph: {
+    images: [
+      "https://res.cloudinary.com/dfadqkxbo/image/upload/c_thumb,w_200,g_face/v1744100903/logo_rx1gog.jpg"
+    ]
+  }
 };
 
 export default function RootLayout({
@@ -38,8 +43,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <Head>
-        <meta name="google-site-verification" content="Ze2aFW-vR3x1r3GPnpbNKpvC_6GDSnO4l3MzolqzzWs" />
-        <meta property="og:image" content="https://res.cloudinary.com/dfadqkxbo/image/upload/c_thumb,w_200,g_face/v1744100903/logo_rx1gog.jpg" />
       </Head>
       <body className={`${inter.variable} font-inter antialiased`}>
         <AuthProvider>
