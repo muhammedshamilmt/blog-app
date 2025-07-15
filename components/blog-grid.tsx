@@ -273,7 +273,7 @@ export function BlogGrid() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
               >
-                <div className="relative rounded-2xl overflow-hidden bg-card border border-coral-100 shadow-xl flex flex-col lg:flex-row items-stretch min-h-[340px] md:h-[500px]  lg:min-h-[320px] mb-8">
+                <div className="relative rounded-2xl overflow-hidden bg-card border border-coral-100 shadow-xl flex flex-col lg:flex-row items-stretch min-h-[500px] md:h-[px]  lg:min-h-[500px] mb-8">
                   {/* Image Section */}
                   <div className="flex-1 min-w-[320px] max-w-lg bg-gradient-to-br from-muted to-background flex items-center h-full justify-center relative">
                     {mostLikedBlog.featuredImage ? (
