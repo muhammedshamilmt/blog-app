@@ -61,7 +61,7 @@ export function ArticlesHero() {
           </motion.div>
 
           {/* Search Bar */}
-          <motion.div
+          {/* <motion.div
             className="max-w-2xl mx-auto"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 30 }}
@@ -85,7 +85,7 @@ export function ArticlesHero() {
                 <Filter className="h-4 w-4" />
               </Button>
             </form>
-          </motion.div>
+          </motion.div> */}
 
           {/* Stats */}
           <motion.div

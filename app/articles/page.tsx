@@ -13,7 +13,7 @@ export default function ArticlesPage() {
     <main className="min-h-screen">
       <ReadingProgress />
       <Navigation />
-      <ArticlesHero />
+      {/* <ArticlesHero /> */}
       {/* <FeaturedArticles /> */}
       <BlogGrid />
       <Footer />

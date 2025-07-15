@@ -57,7 +57,8 @@ export function BlogUploadForm() {
     seoTitle: "",
     seoDescription: "",
     isDraft: true,
-    allowComments: true
+    allowComments: true,
+    language: "English" // Default language
   })
   
   const [currentTag, setCurrentTag] = useState("")
@@ -228,7 +229,8 @@ export function BlogUploadForm() {
         seoTitle: "",
         seoDescription: "",
         isDraft: true,
-        allowComments: true
+        allowComments: true,
+        language: "English" // Reset language
       })
       setCurrentTag("")
       
@@ -785,6 +787,22 @@ Share your knowledge, insights, and stories!"
                 </div>
 
                 <Separator className="my-8" />
+
+                {/* Language Selection */}
+                <div>
+                  <Label htmlFor="language" className="text-lg font-semibold">Language *</Label>
+                  <Select value={formData.language} onValueChange={(value) => handleChange("language", value)}>
+                    <SelectTrigger className="mt-2 border-2 focus:border-coral-500">
+                      <SelectValue placeholder="Select a language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Malayalam">Malayalam</SelectItem>
+                      <SelectItem value="English">English</SelectItem>
+                      <SelectItem value="Arabic">Arabic</SelectItem>
+                      <SelectItem value="Urdu">Urdu</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-end">

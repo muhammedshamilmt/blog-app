@@ -10,6 +10,8 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '6');
     const skip = (page - 1) * limit;
+    const language = searchParams.get('language');
+    const sort = searchParams.get('sort');
 
     const { db } = await connectToDatabase();
     
@@ -25,14 +27,21 @@ export async function GET(request: Request) {
     if (category && category !== 'All') {
       query.category = category;
     }
+    if (language && language !== 'All') {
+      query.language = language;
+    }
 
     // Get total count for pagination
     const total = await db.collection('uploads').countDocuments(query);
 
     // Fetch uploads with pagination
+    let sortOption: { [key: string]: 1 | -1 } = { publishedAt: -1 };
+    if (sort === 'likes') {
+      sortOption = { likes: -1 };
+    }
     const uploads = await db.collection('uploads')
       .find(query)
-      .sort({ publishedAt: -1 })
+      .sort(sortOption)
       .skip(skip)
       .limit(limit)
       .toArray();

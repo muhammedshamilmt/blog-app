@@ -78,6 +78,7 @@ export async function POST(request: Request) {
       seoDescription: formData.seoDescription || '',
       isDraft: formData.isDraft ?? true,
       allowComments: formData.allowComments ?? true,
+      language: formData.language || 'English',
       createdAt: new Date(),
       updatedAt: new Date(),
       status: formData.isDraft ? 'draft' : 'published',

@@ -43,6 +43,7 @@ export function BlogGrid() {
   const [totalPosts, setTotalPosts] = useState(0)
   const [page, setPage] = useState(1)
   const [error, setError] = useState<string | null>(null)
+  const [selectedLanguage, setSelectedLanguage] = useState("All");
 
   const categories = [
     "All",
@@ -53,15 +54,24 @@ export function BlogGrid() {
     "Scientific Reflections",
   ]
 
-  const fetchBlogs = async (category: string = selectedCategory, pageNum: number = 1) => {
+  const languages = [
+    "All",
+    "Malayalam",
+    "English",
+    "Arabic",
+    "Urdu",
+  ];
+
+  const fetchBlogs = async (category = selectedCategory, language = selectedLanguage, pageNum = 1) => {
     try {
-      setIsLoading(true)
-      setError(null)
-      console.log('Fetching blogs for category:', category, 'page:', pageNum)
-      
-      const response = await fetch(
-        `/api/uploads?status=published&category=${encodeURIComponent(category)}&page=${pageNum}&limit=${visiblePosts}`
-      )
+      setIsLoading(true);
+      setError(null);
+      console.log('Fetching blogs for category:', category, 'language:', language, 'page:', pageNum);
+      let url = `/api/uploads?status=published&category=${encodeURIComponent(category)}&page=${pageNum}&limit=${visiblePosts}`;
+      if (language && language !== "All") {
+        url += `&language=${encodeURIComponent(language)}`;
+      }
+      const response = await fetch(url);
       
       if (!response.ok) {
         const errorData = await response.json()
@@ -97,8 +107,8 @@ export function BlogGrid() {
   }
 
   useEffect(() => {
-    fetchBlogs()
-  }, [selectedCategory])
+    fetchBlogs(selectedCategory, selectedLanguage);
+  }, [selectedCategory, selectedLanguage]);
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category)
@@ -106,9 +116,15 @@ export function BlogGrid() {
     setPage(1)
   }
 
+  const handleLanguageChange = (language: string) => {
+    setSelectedLanguage(language);
+    setVisiblePosts(6);
+    setPage(1);
+  };
+
   const handleLoadMore = async () => {
     const nextPage = page + 1
-    await fetchBlogs(selectedCategory, nextPage)
+    await fetchBlogs(selectedCategory, selectedLanguage, nextPage)
     setVisiblePosts(prev => prev + 6)
   }
 
@@ -173,7 +189,7 @@ export function BlogGrid() {
 
         {/* Category Filter */}
         <motion.div
-          className="flex flex-wrap justify-center gap-3 mb-12"
+          className="flex flex-wrap justify-center gap-3 mb-6"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -193,6 +209,30 @@ export function BlogGrid() {
             >
               <Filter className="h-3 w-3 mr-1" />
               {category}
+            </Button>
+          ))}
+        </motion.div>
+        {/* Language Filter */}
+        <motion.div
+          className="flex flex-wrap justify-center gap-3 mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+        >
+          {languages.map((language) => (
+            <Button
+              key={language}
+              variant={selectedLanguage === language ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleLanguageChange(language)}
+              className={`${
+                selectedLanguage === language
+                  ? "bg-coral-600 hover:bg-coral-700 text-white"
+                  : "hover:border-coral-500 hover:text-coral-600"
+              } transition-all duration-200`}
+            >
+              {language}
             </Button>
           ))}
         </motion.div>
