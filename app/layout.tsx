@@ -14,7 +14,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "USBA BLOG",
+  title: "Editorial - Modern Blog Platform",
   description: "A beautiful, accessible editorial platform for high-quality content",
   keywords: ["blog", "editorial", "writing", "content", "modern"],
   authors: [{ name: "Editorial Team" }],
