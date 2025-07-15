@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     images: [
-      "https://res.cloudinary.com/dfadqkxbo/image/upload/c_thumb,w_200,g_face/v1744100903/logo_rx1gog.jpg"
+      "https://res.cloudinary.com/dfadqkxbo/image/upload/v1752579983/favicon_pq0ern.png"
     ]
   }
 };
