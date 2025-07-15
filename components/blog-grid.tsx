@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import { BlogCard } from "./blog-card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Filter, TrendingUp, Loader2 } from "lucide-react"
+import { Filter, TrendingUp, Loader2, ArrowRight } from "lucide-react"
 import { toast } from "sonner"
 
 interface BlogPost {
@@ -163,6 +163,10 @@ export function BlogGrid() {
     return content.substring(0, 150) + '...';
   };
 
+  // Fetch the most liked blog for the featured section
+  const mostLikedBlog = blogPosts.length > 0 ? blogPosts.reduce((max, blog) => (blog.likes || 0) > (max.likes || 0) ? blog : max, blogPosts[0]) : null;
+  const gridPosts = mostLikedBlog ? blogPosts.filter(post => post !== mostLikedBlog) : blogPosts;
+
   return (
     <section id="articles" className="py-20 bg-gradient-to-b from-background to-muted/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -260,12 +264,83 @@ export function BlogGrid() {
           </div>
         ) : (
           <>
+            {/* Most Liked Blog - Full Width Card */}
+            {mostLikedBlog && (
+              <motion.div
+                className="w-full mb-16"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
+                <div className="relative rounded-2xl overflow-hidden bg-card border border-coral-100 shadow-xl flex flex-col lg:flex-row items-stretch min-h-[340px] md:h-[500px]  lg:min-h-[320px] mb-8">
+                  {/* Image Section */}
+                  <div className="flex-1 min-w-[320px] max-w-lg bg-gradient-to-br from-muted to-background flex items-center h-full justify-center relative">
+                    {mostLikedBlog.featuredImage ? (
+                      <img
+                        src={mostLikedBlog.featuredImage}
+                        alt={mostLikedBlog.seoTitle || mostLikedBlog.titles?.[0]?.value || 'Featured'}
+                        className="object-cover w-full h-full min-h-[320px] max-h-[500px]"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full min-h-[320px] max-h-[400px] bg-muted">
+                        <svg width="64" height="64" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="text-muted-foreground opacity-40">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                      </div>
+                    )}
+                    <Badge className="absolute top-4 left-4 bg-gradient-to-r from-blue-400 to-purple-400 text-white px-4 py-1 text-sm font-semibold shadow-lg">
+                      <TrendingUp className="h-4 w-4 mr-1 inline-block" />
+                      Featured
+                    </Badge>
+                  </div>
+                  {/* Content Section */}
+                  <div className="flex-1 flex flex-col justify-center p-8 lg:p-12 relative group">
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <Badge variant="secondary" className="bg-navy-500/10 text-navy-600 border-navy-500/20">
+                        {mostLikedBlog.category || 'General'}
+                      </Badge>
+                      <span className="text-muted-foreground text-sm flex items-center">
+                        {mostLikedBlog.publishDate || mostLikedBlog.publishedAt ? new Date(mostLikedBlog.publishedAt || mostLikedBlog.publishDate || '').toLocaleDateString() : ''}
+                      </span>
+                      <span className="text-muted-foreground text-sm flex items-center">
+                        {getReadTime(mostLikedBlog)}
+                      </span>
+                    </div>
+                    <h3 className="text-3xl lg:text-4xl font-bold mb-4 text-foreground leading-tight">
+                      {mostLikedBlog.seoTitle || mostLikedBlog.titles?.[0]?.value || 'Untitled'}
+                    </h3>
+                    <p className="text-lg text-muted-foreground mb-6">
+                      {mostLikedBlog.seoDescription || getExcerpt(mostLikedBlog)}
+                    </p>
+                    <div className="flex items-center gap-6 mb-4">
+                      <span className="flex items-center text-muted-foreground text-sm">
+                        <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                        {mostLikedBlog.likes || 0}
+                      </span>
+                      <span className="flex items-center text-muted-foreground text-sm">
+                        <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 8h2a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2v-8a2 2 0 012-2h2m4-4h4a2 2 0 012 2v4a2 2 0 01-2 2h-4a2 2 0 01-2-2V6a2 2 0 012-2z" /></svg>
+                        {Array.isArray(mostLikedBlog.comments) ? mostLikedBlog.comments.length : (typeof mostLikedBlog.comments === 'number' ? mostLikedBlog.comments : 0)}
+                      </span>
+                    </div>
+                    {/* Hover Arrow Icon */}
+                    <a
+                      href={`/articles/${mostLikedBlog.id || mostLikedBlog._id}`}
+                      className="absolute right-8 bottom-8 flex items-center justify-center w-12 h-12 rounded-full bg-coral-500 text-white shadow-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-300 hover:bg-coral-600"
+                      aria-label="Read More"
+                    >
+                      <ArrowRight className="h-6 w-6" />
+                    </a>
+                  </div>
+                </div>
+              </motion.div>
+            )}
             {/* Blog Grid */}
             <motion.div
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12"
               layout
             >
-              {blogPosts.map((post, index) => (
+              {gridPosts.map((post, index) => (
                 <BlogCard
                   key={post.id || post._id || index}
                   id={post.id || post._id}
