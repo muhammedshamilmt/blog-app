@@ -2,20 +2,47 @@ import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const { db } = await connectToDatabase()
-    
+    const { db } = await connectToDatabase();
     if (!db) {
-      throw new Error('Database connection failed')
+      throw new Error('Database connection failed');
     }
 
-    // Fetch all users with isWriter: true
+    // Parse status filter from query params
+    let statusFilter = null;
+    if (request && request.url) {
+      const url = new URL(request.url, 'http://localhost');
+      const statusParam = url.searchParams.get('status');
+      if (statusParam) {
+        statusFilter = statusParam.split(',').map(s => s.trim().toLowerCase());
+      }
+    }
+
+    // Fetch all users with isWriter: true (approved writers)
+    let usersQuery: any = { isWriter: true };
+    if (statusFilter && statusFilter.length > 0) {
+      usersQuery = {
+        ...usersQuery,
+        writerStatus: { $in: statusFilter.map(s => s.charAt(0).toUpperCase() + s.slice(1)) }
+      };
+    }
     const writers = await db
       .collection('users')
-      .find({ isWriter: true })
+      .find(usersQuery)
       .sort({ createdAt: -1 })
-      .toArray()
+      .toArray();
+
+    // Fetch writer requests from writers collection
+    let writersQuery = {};
+    if (statusFilter && statusFilter.length > 0) {
+      writersQuery = { status: { $in: statusFilter } };
+    }
+    const requests = await db
+      .collection('writers')
+      .find(writersQuery)
+      .sort({ submittedAt: -1 })
+      .toArray();
 
     // Convert ObjectId to string for JSON serialization
     const serializedWriters = writers.map(writer => {
@@ -33,17 +60,33 @@ export async function GET() {
         likes: writer.profile?.likes || 0,
         featured: !!writer.featured,
         email: writer.email,
-        profile: writer.profile || {}, // <-- Always include full profile object
+        profile: writer.profile || {},
       };
     });
 
-    return NextResponse.json({ success: true, data: { writers: serializedWriters } })
+    // Serialize requests
+    const serializedRequests = requests.map(req => ({
+      id: req._id?.toString() || '',
+      name: req.name || '',
+      email: req.email || '',
+      title: req.title || '',
+      category: req.category || '',
+      pitch: req.pitch || '',
+      experience: req.experience || '',
+      portfolio: req.portfolio || '',
+      status: req.status || 'pending',
+      submittedAt: req.submittedAt ? req.submittedAt.toISOString() : '',
+      updatedAt: req.updatedAt ? req.updatedAt.toISOString() : '',
+      profileImageUrl: req.profileImageUrl || '',
+    }));
+
+    return NextResponse.json({ success: true, data: { writers: serializedWriters, requests: serializedRequests } });
   } catch (error) {
-    console.error('Error fetching writers:', error)
+    console.error('Error fetching writers:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch writers' },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -72,16 +115,10 @@ export async function PATCH(request: Request) {
       filter.email = email;
     }
 
-    // Update user's writer status
-    const result = await db.collection('users').updateOne(
+    // Only update the single writer in the writers collection
+    const result = await db.collection('writers').updateOne(
       filter,
-      { 
-        $set: { 
-          writerStatus: status,
-          isWriter: status === 'approved',
-          updatedAt: new Date()
-        } 
-      }
+      { $set: { status, updatedAt: new Date() } }
     );
 
     if (result.matchedCount === 0) {

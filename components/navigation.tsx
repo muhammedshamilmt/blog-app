@@ -29,7 +29,8 @@ import {
   Layers,
   Mail as MailIcon,
   Users as UsersIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Bell
 } from "lucide-react"
 
 interface ProfileData {
@@ -44,6 +45,13 @@ export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: "Welcome to BlogApp!", description: "Thanks for joining. Start exploring articles and writers.", read: false },
+    { id: 2, title: "New Article Published", description: "Check out the latest article in your favorite category.", read: true },
+    { id: 3, title: "Profile Updated", description: "Your profile changes have been saved.", read: true },
+  ])
+  const hasUnread = notifications.some(n => !n.read)
 
   // Fetch profile data when user is available
   useEffect(() => {
@@ -68,6 +76,20 @@ export function Navigation() {
       fetchProfileData()
     }
   }, [user?.email])
+
+  // Close notifications dropdown on outside click
+  useEffect(() => {
+    if (!showNotifications) return
+    function handleClick(e: MouseEvent) {
+      const notif = document.getElementById("notification-dropdown")
+      const bell = document.getElementById("notification-bell")
+      if (notif && !notif.contains(e.target as Node) && bell && !bell.contains(e.target as Node)) {
+        setShowNotifications(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [showNotifications])
 
   const handleScroll = () => {
     setIsScrolled(window.scrollY > 0)
@@ -173,8 +195,8 @@ export function Navigation() {
               >
                 Write
               </motion.a>
-              {/* Only show Uploads link if user is a writer */}
-              {user && user.isWriter === true && (
+              {/* Only show Uploads link if user is a writer or admin */}
+              {user && (user.isWriter === true || user.role === 'admin') && (
                 <motion.a
                   href="/upload"
                   className="flex items-center space-x-1 text-muted-foreground hover:text-foreground transition-colors duration-200 font-medium"
@@ -242,6 +264,48 @@ export function Navigation() {
 
             {/* Theme Toggle & User Menu */}
             <div className="flex items-center space-x-2">
+              {/* Notification Bell */}
+              <div className="relative">
+                <Button
+                  id="notification-bell"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => setShowNotifications((v) => !v)}
+                  aria-label="Notifications"
+                >
+                  <Bell className="h-5 w-5" />
+                  {hasUnread && (
+                    <span className="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500" />
+                  )}
+                </Button>
+                {showNotifications && (
+                  <div
+                    id="notification-dropdown"
+                    className="absolute right-0 mt-2 w-80 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in slide-in-from-top-2"
+                  >
+                    <div className="p-4 border-b border-border font-semibold text-base">Notifications</div>
+                    <ul className="max-h-72 overflow-y-auto divide-y divide-border bg-background">
+                      {notifications.length === 0 ? (
+                        <li className="p-4 text-muted-foreground text-sm">No notifications</li>
+                      ) : (
+                        notifications.map((notif) => (
+                          <li
+                            key={notif.id}
+                            className={`p-4 hover:bg-muted transition-colors cursor-pointer ${!notif.read ? "bg-muted/50" : ""}`}
+                          >
+                            <div className="font-medium text-sm flex items-center gap-2">
+                              {!notif.read && <span className="inline-block h-2 w-2 rounded-full bg-red-500" />}
+                              {notif.title}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">{notif.description}</div>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
               {/* User menu or avatar */}
               {user ? (
                 <DropdownMenu>

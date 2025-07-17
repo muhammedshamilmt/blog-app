@@ -37,6 +37,7 @@ import {
   upload as imagekitUpload,
 } from "@imagekit/next";
 import { useUser } from '@/contexts/user-context'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface ContentBlock {
   id: string
@@ -46,6 +47,7 @@ interface ContentBlock {
 
 export function BlogUploadForm() {
   const { user } = useUser();
+  const { isAdmin } = useAuth();
   const [formData, setFormData] = useState({
     titles: [] as ContentBlock[],
     excerpts: [] as ContentBlock[],
@@ -58,7 +60,8 @@ export function BlogUploadForm() {
     seoDescription: "",
     isDraft: true,
     allowComments: true,
-    language: "English" // Default language
+    language: "English", // Default language
+    authorEmail: user?.email || '',
   })
   
   const [currentTag, setCurrentTag] = useState("")
@@ -196,7 +199,8 @@ export function BlogUploadForm() {
     try {
       // Get author info from localStorage
       const authorName = typeof window !== 'undefined' ? localStorage.getItem('userName') || '' : '';
-      const authorEmail = typeof window !== 'undefined' ? localStorage.getItem('userEmail') || '' : '';
+      // Use formData.authorEmail (admin can edit, user cannot)
+      const authorEmail = formData.authorEmail || (typeof window !== 'undefined' ? localStorage.getItem('userEmail') || '' : '');
       const response = await fetch('/api/blog/upload', {
         method: 'POST',
         headers: {
@@ -231,7 +235,8 @@ export function BlogUploadForm() {
         seoDescription: "",
         isDraft: true,
         allowComments: true,
-        language: "English" // Reset language
+        language: "English", // Reset language
+        authorEmail: user?.email || '', // Reset authorEmail to current user's email
       })
       setCurrentTag("")
       
@@ -789,6 +794,21 @@ Share your knowledge, insights, and stories!"
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Author Email (Admin Only) */}
+                {isAdmin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="authorEmail">Author Email</Label>
+                    <Input
+                      id="authorEmail"
+                      type="email"
+                      placeholder="Enter author email"
+                      value={formData.authorEmail}
+                      onChange={e => handleChange('authorEmail', e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 justify-end">

@@ -391,7 +391,8 @@ export default function ProfilePage() {
                           id="email"
                           type="email"
                           value={profile.email}
-                          onChange={(e) => setProfile({...profile, email: e.target.value})}
+                          readOnly
+                          className="bg-gray-100 cursor-not-allowed text-gray-500"
                         />
                       </div>
                       

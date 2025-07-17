@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, FileText, Clock, CheckCircle, XCircle, Eye, Download, ArrowLeft } from "lucide-react";
+import { Search, FileText, Clock, CheckCircle, XCircle, Eye, Download, ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { BlogPreview } from "@/components/blog-preview";
 
@@ -32,7 +32,6 @@ const UploadsManagement = () => {
   const [uploads, setUploads] = useState<Upload[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [previewUpload, setPreviewUpload] = useState<Upload | null>(null);
 
   useEffect(() => {
     fetchUploads();
@@ -146,6 +145,30 @@ const UploadsManagement = () => {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch('/api/uploads', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete upload');
+      }
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to delete upload');
+      }
+      toast.success(data.message || 'Upload deleted successfully');
+      fetchUploads();
+    } catch (error) {
+      console.error('Error deleting upload:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete upload');
+    }
+  };
+
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
@@ -167,44 +190,6 @@ const UploadsManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Preview Overlay */}
-      {previewUpload && (
-        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur flex flex-col">
-          {/* Preview Header */}
-          <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  onClick={() => setPreviewUpload(null)}
-                  className="text-coral-600 hover:text-coral-700"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Admin
-                </Button>
-                <div className="flex items-center space-x-4">
-                  <Badge variant="secondary" className="bg-coral-100 text-coral-700">
-                    Live Preview Mode
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* Blog Preview */}
-          <BlogPreview
-            titles={[
-              { id: "title", type: "title", value: previewUpload.title || "Untitled" }
-            ]}
-            excerpts={[]}
-            contents={[
-              { id: "content", type: "content", value: previewUpload.content || "" }
-            ]}
-            category={previewUpload.category || "Uncategorized"}
-            tags={[]}
-            featuredImage={null}
-          />
-        </div>
-      )}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Content Uploads</h2>
@@ -302,15 +287,6 @@ const UploadsManagement = () => {
                           Reject
                         </Button>
                       )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-blue-600 hover:text-blue-700"
-                        onClick={() => setPreviewUpload(upload)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Preview
-                      </Button>
                       {upload.attachments && upload.attachments.length > 0 && (
                         <Button
                           variant="outline"
@@ -321,6 +297,15 @@ const UploadsManagement = () => {
                           Download
                         </Button>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700"
+                        onClick={() => handleDelete(upload._id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 </div>

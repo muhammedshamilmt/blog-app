@@ -10,11 +10,11 @@ export async function POST(request: Request) {
     
     // Get user info from request body (from localStorage on client)
     let author = { name: '', email: '' };
-    if (formData.authorName && formData.authorEmail) {
-      author = {
-        name: formData.authorName,
-        email: formData.authorEmail
-      };
+    if (formData.authorName) {
+      author.name = formData.authorName;
+    }
+    if (formData.authorEmail) {
+      author.email = formData.authorEmail;
     } else {
       // Fallback to cookies
       try {
@@ -25,13 +25,11 @@ export async function POST(request: Request) {
           const firstName = (userData.firstName || '').trim();
           const lastName = (userData.lastName || '').trim();
           const name = `${firstName} ${lastName}`.replace(/\s+/g, ' ').trim();
-          author = {
-            name,
-            email: userData.email || ''
-          };
+          author.name = author.name || name;
+          author.email = userData.email || '';
         }
       } catch (err) {
-        // If parsing fails, leave author as empty strings
+        // If parsing fails, leave author as is
       }
     }
     

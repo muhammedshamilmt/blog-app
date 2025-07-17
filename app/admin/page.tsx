@@ -103,7 +103,7 @@ const AdminPage = () => {
   const navItems: NavItem[] = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "messages", label: "Messages", icon: MessageSquare, badge: (typeof stats.messages === 'number' ? stats.messages : 0).toString() },
-    // { id: "writers", label: "Writer Requests", icon: UserCheck, badge: (typeof stats.writers === 'number' ? stats.writers : 0).toString() },
+    { id: "writers", label: "Writer Requests", icon: UserCheck, badge: (typeof stats.writers === 'number' ? stats.writers : 0).toString() },
     { id: "uploads", label: "Content Uploads", icon: Upload, badge: (typeof stats.uploads === 'number' ? stats.uploads : 0).toString() },
     { id: "users", label: "User Management", icon: Users },
     { id: "analytics", label: "Analytics", icon: TrendingUp },

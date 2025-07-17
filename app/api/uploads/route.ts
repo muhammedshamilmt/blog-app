@@ -143,3 +143,34 @@ export async function PATCH(request: Request) {
     );
   }
 } 
+
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json();
+    const { id } = body;
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Missing required field: id" },
+        { status: 400 }
+      );
+    }
+    const { db } = await connectToDatabase();
+    if (!db) {
+      throw new Error("Database connection failed");
+    }
+    const result = await db.collection("uploads").deleteOne({ _id: new ObjectId(id) });
+    if (result.deletedCount === 0) {
+      return NextResponse.json(
+        { success: false, error: "Upload not found" },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json({ success: true, message: "Upload deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting upload:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to delete upload" },
+      { status: 500 }
+    );
+  }
+} 
